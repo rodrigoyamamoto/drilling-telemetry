@@ -1,7 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
-using DrillingTelemetry.Contracts;
-using DrillingTelemetry.DeviceSimulator;
+﻿using DrillingTelemetry.DeviceSimulator;
 using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";
@@ -44,7 +41,7 @@ ITelemetryReadingGenerator? readingGenerator = generationMode switch
         minimumTemperatureCelsius,
         maximumTemperatureCelsius),
 
-    _ => null,
+    _ => null
 };
 
 if (readingGenerator is null)
@@ -58,13 +55,16 @@ if (readingGenerator is null)
 
 Console.WriteLine($"Using '{generationMode}' generation mode.");
 
-var connectionFactory = new ConnectionFactory()
+var connectionFactory = new ConnectionFactory
 {
     HostName = rabbitMqHostName
 };
 
-await using IConnection connection = await connectionFactory.CreateConnectionAsync();
-await using IChannel channel = await connection.CreateChannelAsync();
+await using IConnection connection =
+    await connectionFactory.CreateConnectionAsync();
+
+await using IChannel channel =
+    await connection.CreateChannelAsync();
 
 await channel.QueueDeclareAsync(
     queue: queueName,
@@ -84,25 +84,3 @@ var simulation = new TelemetrySimulation(
 await simulation.PublishCycleAsync(
     deviceIds,
     CancellationToken.None);
-
-var properties = new BasicProperties
-{
-    ContentType = "application/json", Persistent = true
-};
-
-foreach (string deviceId in deviceIds)
-{
-    TelemetryReading reading = readingGenerator.Generate(deviceId);
-    string message = JsonSerializer.Serialize(reading);
-    byte[] body = Encoding.UTF8.GetBytes(message);
-
-    await channel.BasicPublishAsync(
-        exchange: string.Empty,
-        routingKey: queueName,
-        mandatory: true,
-        basicProperties: properties,
-        body: body);
-
-    Console.WriteLine($"Reading published to '{queueName}':");
-    Console.WriteLine(message);
-}
