@@ -5,7 +5,7 @@ namespace DrillingTelemetry.DeviceSimulator;
 /// <summary>
 /// Generates telemetry readings using fixed measurement values.
 /// </summary>
-public class FixedTelemetryReadingGenerator
+internal sealed class FixedTelemetryReadingGenerator
 {
     private readonly TimeProvider _timeProvider;
     private readonly double _pressurePsi;

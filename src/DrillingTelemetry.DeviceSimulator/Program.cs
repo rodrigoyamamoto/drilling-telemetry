@@ -6,17 +6,21 @@ using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";
 const string queueName = "drilling.telemetry.readings";
-const string deviceId = "DRILL-001";
 const double pressurePsi = 8_250;
 const double temperatureCelsius = 117.5;
+
+string[] deviceIds =
+[
+    "DRILL-001",
+    "DRILL-002",
+    "DRILL-003"
+];
 
 var readingGenerator = new FixedTelemetryReadingGenerator(
     TimeProvider.System,
     pressurePsi,
     temperatureCelsius
 );
-
-TelemetryReading reading = readingGenerator.Generate(deviceId);
 
 var connectionFactory = new ConnectionFactory()
 {
@@ -33,20 +37,24 @@ await channel.QueueDeclareAsync(
     autoDelete: false,
     arguments: null);
 
-string message = JsonSerializer.Serialize(reading);
-byte[] body = Encoding.UTF8.GetBytes(message);
-
 var properties = new BasicProperties
 {
     ContentType = "application/json", Persistent = true
 };
 
-await channel.BasicPublishAsync(
-    exchange: string.Empty,
-    routingKey: queueName,
-    mandatory: true,
-    basicProperties: properties,
-    body: body);
+foreach (string deviceId in deviceIds)
+{
+    TelemetryReading reading = readingGenerator.Generate(deviceId);
+    string message = JsonSerializer.Serialize(reading);
+    byte[] body = Encoding.UTF8.GetBytes(message);
 
-Console.WriteLine($"Reading published to '{queueName}':");
-Console.WriteLine(message);
+    await channel.BasicPublishAsync(
+        exchange: string.Empty,
+        routingKey: queueName,
+        mandatory: true,
+        basicProperties: properties,
+        body: body);
+
+    Console.WriteLine($"Reading published to '{queueName}':");
+    Console.WriteLine(message);
+}
