@@ -1,6 +1,6 @@
 using DrillingTelemetry.Contracts;
 
-namespace DrillingTelemetry.DeviceSimulator;
+namespace DrillingTelemetry.DeviceSimulator.Generation;
 
 /// <summary>
 /// Generates telemetry readings using random measurement values.

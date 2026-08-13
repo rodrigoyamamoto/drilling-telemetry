@@ -1,11 +1,10 @@
-﻿using DrillingTelemetry.DeviceSimulator;
+﻿using DrillingTelemetry.DeviceSimulator.Generation;
+using DrillingTelemetry.DeviceSimulator.Publishing;
+using DrillingTelemetry.DeviceSimulator.Simulation;
 using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";
 const string queueName = "drilling.telemetry.readings";
-
-const string fixedGenerationMode = "fixed";
-const string randomGenerationMode = "random";
 
 const double fixedPressurePsi = 8250;
 const double fixedTemperatureCelsius = 117.5;
@@ -22,38 +21,56 @@ string[] deviceIds =
     "DRILL-003"
 ];
 
-string generationMode = args.Length > 0
-    ? args[0].ToLowerInvariant()
-    : fixedGenerationMode;
+TelemetryGenerationMode generationMode =
+    TelemetryGenerationMode.Fixed;
 
-ITelemetryReadingGenerator? readingGenerator = generationMode switch
+if (args.Length > 0 &&
+    (!Enum.TryParse(
+         args[0],
+         ignoreCase: true,
+         out generationMode) ||
+     !Enum.IsDefined(generationMode)))
 {
-    fixedGenerationMode => new FixedTelemetryReadingGenerator(
-        TimeProvider.System,
-        fixedPressurePsi,
-        fixedTemperatureCelsius),
+    string availableModes = string.Join(
+        ", ",
+        Enum.GetNames<TelemetryGenerationMode>()
+            .Select(name => name.ToLowerInvariant()));
 
-    randomGenerationMode => new RandomTelemetryReadingGenerator(
-        TimeProvider.System,
-        Random.Shared,
-        minimumPressurePsi,
-        maximumPressurePsi,
-        minimumTemperatureCelsius,
-        maximumTemperatureCelsius),
-
-    _ => null
-};
-
-if (readingGenerator is null)
-{
-    Console.WriteLine($"Unknown generation mode '{generationMode}'.");
     Console.WriteLine(
-        $"Available modes: {fixedGenerationMode}, {randomGenerationMode}.");
+        $"Unknown generation mode '{args[0]}'.");
+
+    Console.WriteLine(
+        $"Available modes: {availableModes}.");
 
     return;
 }
 
-Console.WriteLine($"Using '{generationMode}' generation mode.");
+string generationModeName =
+    generationMode.ToString().ToLowerInvariant();
+
+ITelemetryReadingGenerator? readingGenerator = generationMode switch
+{
+    TelemetryGenerationMode.Fixed =>
+        new FixedTelemetryReadingGenerator(
+            TimeProvider.System,
+            fixedPressurePsi,
+            fixedTemperatureCelsius),
+
+    TelemetryGenerationMode.Random =>
+        new RandomTelemetryReadingGenerator(
+            TimeProvider.System,
+            Random.Shared,
+            minimumPressurePsi,
+            maximumPressurePsi,
+            minimumTemperatureCelsius,
+            maximumTemperatureCelsius),
+
+    _ => throw new InvalidOperationException(
+        $"Unsupported generation mode '{generationMode}'.")
+};
+
+Console.WriteLine(
+    $"Using '{generationModeName}' generation mode.");
 
 var connectionFactory = new ConnectionFactory
 {

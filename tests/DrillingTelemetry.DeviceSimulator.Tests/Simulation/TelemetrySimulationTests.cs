@@ -1,7 +1,10 @@
 using DrillingTelemetry.Contracts;
+using DrillingTelemetry.DeviceSimulator.Generation;
+using DrillingTelemetry.DeviceSimulator.Publishing;
+using DrillingTelemetry.DeviceSimulator.Simulation;
 using Microsoft.Extensions.Time.Testing;
 
-namespace DrillingTelemetry.DeviceSimulator.Tests;
+namespace DrillingTelemetry.DeviceSimulator.Tests.Simulation;
 
 /// <summary>
 /// Tests the execution of telemetry simulation cycles.

@@ -3,7 +3,7 @@ using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using RabbitMQ.Client;
 
-namespace DrillingTelemetry.DeviceSimulator;
+namespace DrillingTelemetry.DeviceSimulator.Publishing;
 
 /// <summary>
 /// Publishes telemetry readings to a RabbitMQ queue.
@@ -40,7 +40,7 @@ internal sealed class RabbitMqTelemetryReadingPublisher
         };
     }
 
-
+    /// <inheritdoc />
     public async Task PublishAsync(
         TelemetryReading reading,
         CancellationToken cancellationToken)

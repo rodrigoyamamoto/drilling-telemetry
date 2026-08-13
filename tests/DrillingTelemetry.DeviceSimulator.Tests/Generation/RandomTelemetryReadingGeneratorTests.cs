@@ -1,7 +1,8 @@
 using DrillingTelemetry.Contracts;
+using DrillingTelemetry.DeviceSimulator.Generation;
 using Microsoft.Extensions.Time.Testing;
 
-namespace DrillingTelemetry.DeviceSimulator.Tests;
+namespace DrillingTelemetry.DeviceSimulator.Tests.Generation;
 
 /// <summary>
 /// Tests the generation of telemetry readings with random measurements.

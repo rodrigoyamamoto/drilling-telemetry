@@ -1,6 +1,8 @@
 using DrillingTelemetry.Contracts;
+using DrillingTelemetry.DeviceSimulator.Generation;
+using DrillingTelemetry.DeviceSimulator.Publishing;
 
-namespace DrillingTelemetry.DeviceSimulator;
+namespace DrillingTelemetry.DeviceSimulator.Simulation;
 
 /// <summary>
 /// Coordinates the generation and publishing of telemetry readings.

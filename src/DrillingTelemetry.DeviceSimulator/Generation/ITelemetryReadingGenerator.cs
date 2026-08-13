@@ -1,6 +1,6 @@
 using DrillingTelemetry.Contracts;
 
-namespace DrillingTelemetry.DeviceSimulator;
+namespace DrillingTelemetry.DeviceSimulator.Generation;
 
 internal interface ITelemetryReadingGenerator
 {
