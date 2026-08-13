@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrillingTelemetry.DeviceSim
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrillingTelemetry.Processor", "src\DrillingTelemetry.Processor\DrillingTelemetry.Processor.csproj", "{CBAB4206-537D-4FA8-BBEF-A23EEC75C8D1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrillingTelemetry.Contracts", "src\DrillingTelemetry.Contracts\DrillingTelemetry.Contracts.csproj", "{5EC4C7A1-233F-4A10-BED1-2619EF968662}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,9 +43,22 @@ Global
 		{CBAB4206-537D-4FA8-BBEF-A23EEC75C8D1}.Release|x64.Build.0 = Release|Any CPU
 		{CBAB4206-537D-4FA8-BBEF-A23EEC75C8D1}.Release|x86.ActiveCfg = Release|Any CPU
 		{CBAB4206-537D-4FA8-BBEF-A23EEC75C8D1}.Release|x86.Build.0 = Release|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Debug|x64.Build.0 = Debug|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Debug|x86.Build.0 = Debug|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x64.ActiveCfg = Release|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x64.Build.0 = Release|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x86.ActiveCfg = Release|Any CPU
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9231B476-2021-4BFD-99C5-070D5ED09615} = {9BC5A1E7-B12F-421A-9B86-27BE9708E2D8}
 		{CBAB4206-537D-4FA8-BBEF-A23EEC75C8D1} = {9BC5A1E7-B12F-421A-9B86-27BE9708E2D8}
+		{5EC4C7A1-233F-4A10-BED1-2619EF968662} = {9BC5A1E7-B12F-421A-9B86-27BE9708E2D8}
 	EndGlobalSection
 EndGlobal

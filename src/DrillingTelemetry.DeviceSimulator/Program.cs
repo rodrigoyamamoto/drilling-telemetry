@@ -1,7 +1,6 @@
-﻿using System.Net.Mime;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using DrillingTelemetry.DeviceSimulator;
+using DrillingTelemetry.Contracts;
 using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";

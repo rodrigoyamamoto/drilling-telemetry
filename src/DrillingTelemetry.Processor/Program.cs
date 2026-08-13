@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using DrillingTelemetry.Processor;
+using DrillingTelemetry.Contracts;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 

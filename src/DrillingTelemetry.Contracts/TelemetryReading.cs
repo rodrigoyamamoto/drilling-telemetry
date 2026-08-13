@@ -1,9 +1,9 @@
-namespace DrillingTelemetry.Processor;
+namespace DrillingTelemetry.Contracts;
 
 /// <summary>
-/// Represents a telemetry reading received for processing.
+/// Represents a telemetry reading exchanged between applications.
 /// </summary>
-internal sealed class TelemetryReading
+public sealed class TelemetryReading
 {
     /// <summary>
     /// Gets or sets the device identifier.
