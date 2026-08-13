@@ -36,7 +36,8 @@ ITelemetryReadingGenerator? readingGenerator = generationMode switch
         fixedPressurePsi,
         fixedTemperatureCelsius),
 
-    randomGenerationMode => new RandomTelemetryReadingGenerator(TimeProvider.System,
+    randomGenerationMode => new RandomTelemetryReadingGenerator(
+        TimeProvider.System,
         Random.Shared,
         minimumPressurePsi,
         maximumPressurePsi,
@@ -71,6 +72,18 @@ await channel.QueueDeclareAsync(
     exclusive: false,
     autoDelete: false,
     arguments: null);
+
+var readingPublisher = new RabbitMqTelemetryReadingPublisher(
+    channel,
+    queueName);
+
+var simulation = new TelemetrySimulation(
+    readingGenerator,
+    readingPublisher);
+
+await simulation.PublishCycleAsync(
+    deviceIds,
+    CancellationToken.None);
 
 var properties = new BasicProperties
 {
