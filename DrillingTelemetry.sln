@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrillingTelemetry.Processor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrillingTelemetry.Contracts", "src\DrillingTelemetry.Contracts\DrillingTelemetry.Contracts.csproj", "{5EC4C7A1-233F-4A10-BED1-2619EF968662}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{99CEA21F-E95C-40C4-B310-51BFF8412259}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrillingTelemetry.DeviceSimulator.Tests", "tests\DrillingTelemetry.DeviceSimulator.Tests\DrillingTelemetry.DeviceSimulator.Tests.csproj", "{723E5A5B-177F-4CFE-9229-B6BECF3647BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,10 +59,23 @@ Global
 		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x64.Build.0 = Release|Any CPU
 		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x86.ActiveCfg = Release|Any CPU
 		{5EC4C7A1-233F-4A10-BED1-2619EF968662}.Release|x86.Build.0 = Release|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Debug|x64.Build.0 = Debug|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Debug|x86.Build.0 = Debug|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Release|x64.ActiveCfg = Release|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Release|x64.Build.0 = Release|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Release|x86.ActiveCfg = Release|Any CPU
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9231B476-2021-4BFD-99C5-070D5ED09615} = {9BC5A1E7-B12F-421A-9B86-27BE9708E2D8}
 		{CBAB4206-537D-4FA8-BBEF-A23EEC75C8D1} = {9BC5A1E7-B12F-421A-9B86-27BE9708E2D8}
 		{5EC4C7A1-233F-4A10-BED1-2619EF968662} = {9BC5A1E7-B12F-421A-9B86-27BE9708E2D8}
+		{723E5A5B-177F-4CFE-9229-B6BECF3647BA} = {99CEA21F-E95C-40C4-B310-51BFF8412259}
 	EndGlobalSection
 EndGlobal

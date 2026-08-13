@@ -1,15 +1,22 @@
 ﻿using System.Text;
 using System.Text.Json;
 using DrillingTelemetry.Contracts;
+using DrillingTelemetry.DeviceSimulator;
 using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";
 const string queueName = "drilling.telemetry.readings";
+const string deviceId = "DRILL-001";
+const double pressurePsi = 8_250;
+const double temperatureCelsius = 117.5;
 
-var reading = new TelemetryReading()
-{
-    DeviceId = "DRILL-001", PressurePsi = 8250, TemperatureCelsius = 117.5, TimestampUtc = DateTimeOffset.UtcNow
-};
+var readingGenerator = new FixedTelemetryReadingGenerator(
+    TimeProvider.System,
+    pressurePsi,
+    temperatureCelsius
+);
+
+TelemetryReading reading = readingGenerator.Generate(deviceId);
 
 var connectionFactory = new ConnectionFactory()
 {
