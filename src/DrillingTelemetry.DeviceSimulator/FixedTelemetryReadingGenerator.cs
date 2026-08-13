@@ -5,7 +5,7 @@ namespace DrillingTelemetry.DeviceSimulator;
 /// <summary>
 /// Generates telemetry readings using fixed measurement values.
 /// </summary>
-internal sealed class FixedTelemetryReadingGenerator
+internal sealed class FixedTelemetryReadingGenerator : ITelemetryReadingGenerator
 {
     private readonly TimeProvider _timeProvider;
     private readonly double _pressurePsi;
@@ -39,7 +39,7 @@ internal sealed class FixedTelemetryReadingGenerator
     /// </summary>
     /// <param name="deviceId">Identifier of the device.</param>
     /// <returns>The generated telemetry reading.</returns>
-    internal TelemetryReading Generate(string deviceId)
+    public TelemetryReading Generate(string deviceId)
     {
         return new TelemetryReading
         {

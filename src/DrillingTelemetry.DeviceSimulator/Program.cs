@@ -6,8 +6,17 @@ using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";
 const string queueName = "drilling.telemetry.readings";
-const double pressurePsi = 8_250;
-const double temperatureCelsius = 117.5;
+
+const string fixedGenerationMode = "fixed";
+const string randomGenerationMode = "random";
+
+const double fixedPressurePsi = 8250;
+const double fixedTemperatureCelsius = 117.5;
+
+const double minimumPressurePsi = 7000;
+const double maximumPressurePsi = 9000;
+const double minimumTemperatureCelsius = 100;
+const double maximumTemperatureCelsius = 140;
 
 string[] deviceIds =
 [
@@ -16,11 +25,37 @@ string[] deviceIds =
     "DRILL-003"
 ];
 
-var readingGenerator = new FixedTelemetryReadingGenerator(
-    TimeProvider.System,
-    pressurePsi,
-    temperatureCelsius
-);
+string generationMode = args.Length > 0
+    ? args[0].ToLowerInvariant()
+    : fixedGenerationMode;
+
+ITelemetryReadingGenerator? readingGenerator = generationMode switch
+{
+    fixedGenerationMode => new FixedTelemetryReadingGenerator(
+        TimeProvider.System,
+        fixedPressurePsi,
+        fixedTemperatureCelsius),
+
+    randomGenerationMode => new RandomTelemetryReadingGenerator(TimeProvider.System,
+        Random.Shared,
+        minimumPressurePsi,
+        maximumPressurePsi,
+        minimumTemperatureCelsius,
+        maximumTemperatureCelsius),
+
+    _ => null,
+};
+
+if (readingGenerator is null)
+{
+    Console.WriteLine($"Unknown generation mode '{generationMode}'.");
+    Console.WriteLine(
+        $"Available modes: {fixedGenerationMode}, {randomGenerationMode}.");
+
+    return;
+}
+
+Console.WriteLine($"Using '{generationMode}' generation mode.");
 
 var connectionFactory = new ConnectionFactory()
 {
