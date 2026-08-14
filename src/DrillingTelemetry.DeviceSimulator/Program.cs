@@ -6,6 +6,8 @@ using RabbitMQ.Client;
 const string rabbitMqHostName = "localhost";
 const string queueName = "drilling.telemetry.readings";
 
+const int publishingIntervalSeconds = 2;
+
 const double fixedPressurePsi = 8250;
 const double fixedTemperatureCelsius = 117.5;
 
@@ -21,8 +23,10 @@ string[] deviceIds =
     "DRILL-003"
 ];
 
-TelemetryGenerationMode generationMode =
-    TelemetryGenerationMode.Fixed;
+var publishingInterval = TimeSpan.FromSeconds(publishingIntervalSeconds);
+TimeProvider timeProvider = TimeProvider.System;
+
+TelemetryGenerationMode generationMode = TelemetryGenerationMode.Fixed;
 
 if (args.Length > 0 &&
     (!Enum.TryParse(
@@ -52,13 +56,13 @@ ITelemetryReadingGenerator? readingGenerator = generationMode switch
 {
     TelemetryGenerationMode.Fixed =>
         new FixedTelemetryReadingGenerator(
-            TimeProvider.System,
+            timeProvider,
             fixedPressurePsi,
             fixedTemperatureCelsius),
 
     TelemetryGenerationMode.Random =>
         new RandomTelemetryReadingGenerator(
-            TimeProvider.System,
+            timeProvider,
             Random.Shared,
             minimumPressurePsi,
             maximumPressurePsi,
@@ -96,8 +100,39 @@ var readingPublisher = new RabbitMqTelemetryReadingPublisher(
 
 var simulation = new TelemetrySimulation(
     readingGenerator,
-    readingPublisher);
+    readingPublisher,
+    TimeProvider.System);
 
-await simulation.PublishCycleAsync(
-    deviceIds,
-    CancellationToken.None);
+var cancellationTokenSource = new CancellationTokenSource();
+
+ConsoleCancelEventHandler cancelKeyPressHandler =
+    (_, eventArgs) =>
+    {
+        eventArgs.Cancel = true;
+        cancellationTokenSource.Cancel();
+    };
+
+Console.CancelKeyPress += cancelKeyPressHandler;
+
+Console.WriteLine(
+    $"Publishing one cycle every " +
+    $"{publishingInterval.TotalSeconds} seconds.");
+
+Console.WriteLine("Press Ctrl+C to stop.");
+
+try
+{
+    await simulation.RunAsync(
+        deviceIds,
+        publishingInterval,
+        cancellationTokenSource.Token);
+}
+catch (OperationCanceledException) when (cancellationTokenSource.IsCancellationRequested)
+{
+    Console.WriteLine("Telemetry simulation stopped.");
+}
+finally
+{
+    Console.CancelKeyPress -= cancelKeyPressHandler;
+    cancellationTokenSource.Dispose();
+}
