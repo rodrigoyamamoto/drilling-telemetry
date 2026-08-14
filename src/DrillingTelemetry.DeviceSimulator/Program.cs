@@ -1,11 +1,16 @@
-﻿using DrillingTelemetry.DeviceSimulator.Generation;
+﻿using DrillingTelemetry.DeviceSimulator.Control;
+using DrillingTelemetry.DeviceSimulator.Generation;
 using DrillingTelemetry.DeviceSimulator.Publishing;
 using DrillingTelemetry.DeviceSimulator.Runtime;
 using DrillingTelemetry.DeviceSimulator.Simulation;
 using RabbitMQ.Client;
 
 const string rabbitMqHostName = "localhost";
-const string queueName = "drilling.telemetry.readings";
+
+const string readingsQueueName =
+    "drilling.telemetry.readings";
+const string settingsQueueName =
+    "drilling.telemetry.simulator.settings";
 
 const int publishingIntervalSeconds = 2;
 
@@ -33,6 +38,9 @@ var initialSettings = new SimulationSettings(
     publishingInterval);
 
 var settingsStore = new SimulationSettingsStore(initialSettings);
+
+var settingsCommandHandler =
+    new SimulationSettingsCommandHandler(settingsStore);
 
 TelemetryGenerationMode generationMode = TelemetryGenerationMode.Fixed;
 
@@ -92,19 +100,29 @@ var connectionFactory = new ConnectionFactory
 await using IConnection connection =
     await connectionFactory.CreateConnectionAsync();
 
-await using IChannel channel =
+await using IChannel telemetryChannel =
     await connection.CreateChannelAsync();
 
-await channel.QueueDeclareAsync(
-    queue: queueName,
+await using IChannel controlChannel =
+    await connection.CreateChannelAsync();
+
+await telemetryChannel.QueueDeclareAsync(
+    queue: readingsQueueName,
     durable: true,
     exclusive: false,
     autoDelete: false,
     arguments: null);
 
-var readingPublisher = new RabbitMqTelemetryReadingPublisher(
-    channel,
-    queueName);
+var readingPublisher =
+    new RabbitMqTelemetryReadingPublisher(
+        telemetryChannel,
+        readingsQueueName);
+
+var settingsConsumer =
+    new RabbitMqSimulationSettingsConsumer(
+        controlChannel,
+        settingsQueueName,
+        settingsCommandHandler);
 
 var simulation = new TelemetrySimulation(
     readingGenerator,
@@ -114,9 +132,15 @@ var simulation = new TelemetrySimulation(
 
 using var cancellationHandler = new ConsoleCancellationHandler();
 
+await settingsConsumer.StartAsync(cancellationHandler.Token);
+
 Console.WriteLine(
     $"Publishing one cycle every " +
     $"{publishingInterval.TotalSeconds} seconds.");
+
+Console.WriteLine(
+    $"Listening for settings commands from " +
+    $"'{settingsQueueName}'.");
 
 Console.WriteLine("Press Ctrl+C to stop.");
 
