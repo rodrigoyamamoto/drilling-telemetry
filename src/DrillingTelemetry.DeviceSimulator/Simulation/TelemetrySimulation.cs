@@ -13,6 +13,7 @@ internal sealed class TelemetrySimulation
     private readonly ITelemetryReadingPublisher _readingPublisher;
 
     private readonly TimeProvider _timeProvider;
+    private readonly SimulationSettingsStore _settingsStore;
 
     /// <summary>
     /// Initializes a telemetry simulation.
@@ -23,21 +24,27 @@ internal sealed class TelemetrySimulation
     /// <param name="readingPublisher">
     /// Publisher used to send telemetry readings.
     /// </param>
-    /// // <param name="timeProvider">
+    /// <param name="timeProvider">
     /// Provides the timer used between publishing cycles.
+    /// </param>
+    /// <param name="settingsStore">
+    /// Provides the current runtime simulation settings.
     /// </param>
     public TelemetrySimulation(
         ITelemetryReadingGenerator readingGenerator,
         ITelemetryReadingPublisher readingPublisher,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        SimulationSettingsStore settingsStore)
     {
         ArgumentNullException.ThrowIfNull(readingGenerator);
         ArgumentNullException.ThrowIfNull(readingPublisher);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(settingsStore);
 
         _readingGenerator = readingGenerator;
         _readingPublisher = readingPublisher;
         _timeProvider = timeProvider;
+        _settingsStore = settingsStore;
     }
 
     /// <summary>
@@ -65,30 +72,56 @@ internal sealed class TelemetrySimulation
     }
 
     /// <summary>
-    /// Continuously publishes telemetry cycles using the specified interval.
+    /// Continuously publishes telemetry cycles using the current runtime settings.
     /// </summary>
-    /// <param name="deviceIds">
-    /// Identifiers of the devices included in each cycle.
+    /// <param name="cancellationToken">
+    /// Token used to stop the simulation.
     /// </param>
-    /// <param name="publishingInterval">
-    /// Time waited between publishing cycles.
+    public async Task RunAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            SimulationSettings settings = _settingsStore.Current;
+
+            await PublishCycleAsync(settings.DeviceIds, cancellationToken);
+            await WaitForNextCycleAsync(settings, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Waits until the current interval elapses or settings change.
+    /// </summary>
+    /// <param name="settings">
+    /// Settings used by the cycle that has just completed.
     /// </param>
     /// <param name="cancellationToken">
     /// Token used to stop the simulation.
     /// </param>
-    public async Task RunAsync(
-        IReadOnlyList<string> deviceIds,
-        TimeSpan publishingInterval,
+    private async Task WaitForNextCycleAsync(
+        SimulationSettings settings,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(deviceIds);
+        using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        while (!cancellationToken.IsCancellationRequested)
+        var delayTask = Task.Delay(settings.PublishingInterval, _timeProvider, waitCancellation.Token);
+        Task settingsChangedTask = _settingsStore.WaitForChangeAsync(settings.Version, waitCancellation.Token);
+
+        await Task.WhenAny(
+            delayTask,
+            settingsChangedTask);
+
+        await waitCancellation.CancelAsync();
+
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            await PublishCycleAsync(deviceIds, cancellationToken);
-            await Task.Delay(publishingInterval, _timeProvider, cancellationToken);
+            await Task.WhenAll(delayTask, settingsChangedTask);
         }
+        catch (OperationCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            // The unfinished internal wait was cancelled intentionally.
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
     }
 }

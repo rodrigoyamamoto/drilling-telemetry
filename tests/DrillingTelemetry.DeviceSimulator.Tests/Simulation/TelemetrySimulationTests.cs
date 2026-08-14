@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.DeviceSimulator.Generation;
 using DrillingTelemetry.DeviceSimulator.Publishing;
@@ -44,14 +45,19 @@ public sealed class TelemetrySimulationTests
             pressurePsi,
             temperatureCelsius);
 
-        var readingPublisher =
-            new RecordingTelemetryReadingPublisher(
-                expectedReadingCount: deviceIds.Length);
+        var readingPublisher = new RecordingTelemetryReadingPublisher();
 
+        var settingsStore = new SimulationSettingsStore(
+            new SimulationSettings(
+                version: 1,
+                deviceIds,
+                publishingInterval: TimeSpan.FromSeconds(1)));
+        
         var simulation = new TelemetrySimulation(
             readingGenerator,
             readingPublisher,
-            timeProvider);
+            timeProvider,
+            settingsStore);
 
         // Act
         await simulation.PublishCycleAsync(
@@ -122,23 +128,25 @@ public sealed class TelemetrySimulationTests
             pressurePsi,
             temperatureCelsius);
 
-        var readingPublisher =
-            new RecordingTelemetryReadingPublisher(
-                expectedReadingCount: expectedDeviceIds.Length);
+        var readingPublisher = new RecordingTelemetryReadingPublisher();
 
+        var settingsStore = new SimulationSettingsStore(
+            new SimulationSettings(
+                version: 1,
+                deviceIds,
+                publishingInterval));
+        
         var simulation = new TelemetrySimulation(
             readingGenerator,
             readingPublisher,
-            timeProvider);
+            timeProvider,
+            settingsStore);
 
         using var cancellationTokenSource =
             new CancellationTokenSource();
 
         // Act
-        Task simulationTask = simulation.RunAsync(
-            deviceIds,
-            publishingInterval,
-            cancellationTokenSource.Token);
+        Task simulationTask = simulation.RunAsync(cancellationTokenSource.Token);
 
         // Assert
         Assert.Equal(
@@ -150,12 +158,11 @@ public sealed class TelemetrySimulationTests
 
         timeProvider.Advance(publishingInterval);
 
-        await readingPublisher.WaitUntilExpectedCountAsync();
+        await readingPublisher.WaitUntilCountAsync(expectedDeviceIds.Length);
 
         cancellationTokenSource.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => simulationTask);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => simulationTask);
 
         Assert.Equal(
             expectedDeviceIds,
@@ -164,29 +171,149 @@ public sealed class TelemetrySimulationTests
     }
 
     /// <summary>
+    /// Verifies that updated settings interrupt the current wait and are
+    /// applied without restarting the simulation.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_SettingsChangedDuringExecution_AppliesWithoutRestart()
+    {
+        // Arrange
+        const double pressurePsi = 8_250;
+        const double temperatureCelsius = 117.5;
+
+        string[] initialDeviceIds =
+        [
+            "DRILL-001",
+            "DRILL-002"
+        ];
+
+        string[] updatedDeviceIds =
+        [
+            "DRILL-001",
+            "DRILL-002",
+            "DRILL-003",
+            "DRILL-004"
+        ];
+
+        string[] expectedAfterUpdate =
+        [
+            "DRILL-001",
+            "DRILL-002",
+            "DRILL-001",
+            "DRILL-002",
+            "DRILL-003",
+            "DRILL-004"
+        ];
+
+        string[] expectedAfterUpdatedInterval =
+        [
+            "DRILL-001",
+            "DRILL-002",
+            "DRILL-001",
+            "DRILL-002",
+            "DRILL-003",
+            "DRILL-004",
+            "DRILL-001",
+            "DRILL-002",
+            "DRILL-003",
+            "DRILL-004"
+        ];
+
+        var currentTimeUtc = new DateTimeOffset(
+            year: 2026,
+            month: 8,
+            day: 14,
+            hour: 12,
+            minute: 0,
+            second: 0,
+            offset: TimeSpan.Zero);
+
+        var timeProvider = new FakeTimeProvider(currentTimeUtc);
+
+        var initialSettings = new SimulationSettings(
+            version: 1,
+            deviceIds: initialDeviceIds,
+            publishingInterval: TimeSpan.FromSeconds(30));
+
+        var updatedSettings = new SimulationSettings(
+            version: 2,
+            deviceIds: updatedDeviceIds,
+            publishingInterval: TimeSpan.FromMilliseconds(500));
+
+        var settingsStore =
+            new SimulationSettingsStore(initialSettings);
+
+        var readingGenerator = new FixedTelemetryReadingGenerator(
+            timeProvider,
+            pressurePsi,
+            temperatureCelsius);
+
+        var readingPublisher =
+            new RecordingTelemetryReadingPublisher();
+
+        var simulation = new TelemetrySimulation(
+            readingGenerator,
+            readingPublisher,
+            timeProvider,
+            settingsStore);
+
+        using var cancellationTokenSource =
+            new CancellationTokenSource();
+
+        // Act
+        Task simulationTask = simulation.RunAsync(
+            cancellationTokenSource.Token);
+
+        // Assert
+        Assert.Equal(
+            initialDeviceIds,
+            readingPublisher.PublishedReadings
+                .Select(reading => reading.DeviceId));
+
+        settingsStore.Update(updatedSettings);
+
+        await readingPublisher.WaitUntilCountAsync(
+            expectedAfterUpdate.Length);
+
+        Assert.Equal(
+            expectedAfterUpdate,
+            readingPublisher.PublishedReadings
+                .Select(reading => reading.DeviceId));
+
+        await Task.Yield();
+
+        timeProvider.Advance(
+            updatedSettings.PublishingInterval);
+
+        await readingPublisher.WaitUntilCountAsync(
+            expectedAfterUpdatedInterval.Length);
+
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => simulationTask);
+
+        Assert.Equal(
+            expectedAfterUpdatedInterval,
+            readingPublisher.PublishedReadings
+                .Select(reading => reading.DeviceId));
+
+        Assert.Equal(
+            updatedSettings.Version,
+            settingsStore.Current.Version);
+    }
+
+    /// <summary>
     /// Records readings published during a test.
     /// </summary>
     private sealed class RecordingTelemetryReadingPublisher
         : ITelemetryReadingPublisher
     {
-        private readonly int _expectedReadingCount;
-
-        private readonly TaskCompletionSource<bool>
-            _expectedCountReached = new(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-
-        /// <summary>
-        /// Initializes a publisher that signals when the expected number
-        /// of readings has been received.
-        /// </summary>
-        /// <param name="expectedReadingCount">
-        /// Number of readings required to complete the signal.
-        /// </param>
-        public RecordingTelemetryReadingPublisher(
-            int expectedReadingCount)
-        {
-            _expectedReadingCount = expectedReadingCount;
-        }
+        private readonly Channel<int> _publishedCounts =
+            Channel.CreateUnbounded<int>(
+                new UnboundedChannelOptions
+                {
+                    SingleReader = true, SingleWriter = true
+                });
 
         /// <summary>
         /// Gets the readings received by the publisher.
@@ -194,7 +321,7 @@ public sealed class TelemetrySimulationTests
         public List<TelemetryReading> PublishedReadings { get; } = [];
 
         /// <inheritdoc />
-        public Task PublishAsync(
+        public async Task PublishAsync(
             TelemetryReading reading,
             CancellationToken cancellationToken)
         {
@@ -202,23 +329,26 @@ public sealed class TelemetrySimulationTests
 
             PublishedReadings.Add(reading);
 
-            if (PublishedReadings.Count == _expectedReadingCount)
-            {
-                _expectedCountReached.TrySetResult(true);
-            }
-
-            return Task.CompletedTask;
+            await _publishedCounts.Writer.WriteAsync(PublishedReadings.Count, cancellationToken);
         }
 
         /// <summary>
-        /// Waits until the expected number of readings has been received.
+        /// Waits until the specified number of readings has been received.
         /// </summary>
+        /// <param name="expectedCount">
+        /// Number of readings required to complete the wait.
+        /// </param>
         /// <returns>
         /// A task completed when the expected count is reached.
         /// </returns>
-        public Task WaitUntilExpectedCountAsync()
+        public async Task WaitUntilCountAsync(int expectedCount)
         {
-            return _expectedCountReached.Task;
+            int publishedCount = 0;
+
+            while (publishedCount < expectedCount)
+            {
+                publishedCount = await _publishedCounts.Reader.ReadAsync();
+            }
         }
     }
 }
