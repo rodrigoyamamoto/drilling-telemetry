@@ -1,155 +1,17 @@
-﻿using DrillingTelemetry.DeviceSimulator.RuntimeSettings;
-using DrillingTelemetry.DeviceSimulator.Generation;
-using DrillingTelemetry.DeviceSimulator.Publishing;
-using DrillingTelemetry.DeviceSimulator.Runtime;
-using DrillingTelemetry.DeviceSimulator.Simulation;
-using RabbitMQ.Client;
+﻿using DrillingTelemetry.DeviceSimulator.Configuration;
 
-const string rabbitMqHostName = "localhost";
+HostApplicationBuilder builder =
+    Host.CreateApplicationBuilder();
 
-const string readingsQueueName =
-    "drilling.telemetry.readings";
-const string simulationSettingsQueueName =
-    "drilling.telemetry.simulator.settings";
-
-const int publishingIntervalSeconds = 2;
-
-const double fixedPressurePsi = 8250;
-const double fixedTemperatureCelsius = 117.5;
-
-const double minimumPressurePsi = 7000;
-const double maximumPressurePsi = 9000;
-const double minimumTemperatureCelsius = 100;
-const double maximumTemperatureCelsius = 140;
-
-string[] deviceIds =
-[
-    "DRILL-001",
-    "DRILL-002",
-    "DRILL-003"
-];
-
-var publishingInterval = TimeSpan.FromSeconds(publishingIntervalSeconds);
-TimeProvider timeProvider = TimeProvider.System;
-
-var initialSettings = new SimulationSettings(
-    revision: 1,
-    deviceIds,
-    publishingInterval);
-
-var settingsState = new SimulationSettingsState(initialSettings);
-
-var settingsCommandApplier =
-    new SimulationSettingsCommandApplier(settingsState);
-
-TelemetryGenerationMode generationMode = TelemetryGenerationMode.Fixed;
-
-if (args.Length > 0 &&
-    (!Enum.TryParse(
-         args[0],
-         ignoreCase: true,
-         out generationMode) ||
-     !Enum.IsDefined(generationMode)))
+if (args.Length > 0)
 {
-    string availableModes = string.Join(
-        ", ",
-        Enum.GetNames<TelemetryGenerationMode>()
-            .Select(name => name.ToLowerInvariant()));
-
-    Console.WriteLine(
-        $"Unknown generation mode '{args[0]}'.");
-
-    Console.WriteLine(
-        $"Available modes: {availableModes}.");
-
-    return;
+    builder.Configuration[
+            $"{SimulationOptions.SectionName}:GenerationMode"] =
+        args[0];
 }
 
-string generationModeName =
-    generationMode.ToString().ToLowerInvariant();
+builder.Services.AddDeviceSimulator();
 
-ITelemetryReadingGenerator readingGenerator = generationMode switch
-{
-    TelemetryGenerationMode.Fixed =>
-        new FixedTelemetryReadingGenerator(
-            timeProvider,
-            fixedPressurePsi,
-            fixedTemperatureCelsius),
+IHost host = builder.Build();
 
-    TelemetryGenerationMode.Random =>
-        new RandomTelemetryReadingGenerator(
-            timeProvider,
-            Random.Shared,
-            minimumPressurePsi,
-            maximumPressurePsi,
-            minimumTemperatureCelsius,
-            maximumTemperatureCelsius),
-
-    _ => throw new InvalidOperationException(
-        $"Unsupported generation mode '{generationMode}'.")
-};
-
-Console.WriteLine(
-    $"Using '{generationModeName}' generation mode.");
-
-var connectionFactory = new ConnectionFactory
-{
-    HostName = rabbitMqHostName
-};
-
-await using IConnection connection =
-    await connectionFactory.CreateConnectionAsync();
-
-await using IChannel telemetryChannel =
-    await connection.CreateChannelAsync();
-
-await using IChannel settingsCommandChannel =
-    await connection.CreateChannelAsync();
-
-await telemetryChannel.QueueDeclareAsync(
-    queue: readingsQueueName,
-    durable: true,
-    exclusive: false,
-    autoDelete: false,
-    arguments: null);
-
-var readingPublisher =
-    new RabbitMqTelemetryReadingPublisher(
-        telemetryChannel,
-        readingsQueueName);
-
-var settingsCommandConsumer =
-    new RabbitMqSimulationSettingsConsumer(
-        settingsCommandChannel,
-        simulationSettingsQueueName,
-        settingsCommandApplier);
-
-var simulation = new TelemetrySimulation(
-    readingGenerator,
-    readingPublisher,
-    timeProvider,
-    settingsState);
-
-using var cancellationHandler = new ConsoleCancellationHandler();
-
-await settingsCommandConsumer.StartAsync(cancellationHandler.Token);
-
-Console.WriteLine(
-    $"Publishing one cycle every " +
-    $"{publishingInterval.TotalSeconds} seconds.");
-
-Console.WriteLine(
-    $"Listening for settings commands from " +
-    $"'{simulationSettingsQueueName}'.");
-
-Console.WriteLine("Press Ctrl+C to stop.");
-
-try
-{
-    await simulation.RunAsync(cancellationHandler.Token);
-}
-catch (OperationCanceledException)
-    when (cancellationHandler.Token.IsCancellationRequested)
-{
-    Console.WriteLine("Telemetry simulation stopped.");
-}
+await host.RunAsync();

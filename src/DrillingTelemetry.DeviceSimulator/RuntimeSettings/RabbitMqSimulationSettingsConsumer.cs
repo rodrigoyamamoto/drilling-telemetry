@@ -13,6 +13,7 @@ internal sealed class RabbitMqSimulationSettingsConsumer
     private readonly IChannel _channel;
     private readonly string _queueName;
     private readonly SimulationSettingsCommandApplier _commandApplier;
+    private readonly ILogger<RabbitMqSimulationSettingsConsumer> _logger;
 
     /// <summary>
     /// Initialises a RabbitMQ simulation settings consumer.
@@ -26,18 +27,24 @@ internal sealed class RabbitMqSimulationSettingsConsumer
     /// <param name="commandApplier">
     /// Applies received settings commands.
     /// </param>
+    /// /// <param name="logger">
+    /// Records settings processing information.
+    /// </param>
     public RabbitMqSimulationSettingsConsumer(
         IChannel channel,
         string queueName,
-        SimulationSettingsCommandApplier commandApplier)
+        SimulationSettingsCommandApplier commandApplier,
+        ILogger<RabbitMqSimulationSettingsConsumer> logger)
     {
         ArgumentNullException.ThrowIfNull(channel);
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
         ArgumentNullException.ThrowIfNull(commandApplier);
+        ArgumentNullException.ThrowIfNull(logger);
 
         _channel = channel;
         _queueName = queueName;
         _commandApplier = commandApplier;
+        _logger = logger;
     }
 
     /// <summary>
@@ -46,7 +53,10 @@ internal sealed class RabbitMqSimulationSettingsConsumer
     /// <param name="cancellationToken">
     /// Token used to cancel consumer initialisation.
     /// </param>
-    public async Task StartAsync(
+    /// <returns>
+    /// Consumer tag assigned by RabbitMQ.
+    /// </returns>
+    public async Task<string> StartAsync(
         CancellationToken cancellationToken)
     {
         await _channel.QueueDeclareAsync(
@@ -67,11 +77,13 @@ internal sealed class RabbitMqSimulationSettingsConsumer
 
         consumer.ReceivedAsync += HandleReceivedAsync;
 
-        await _channel.BasicConsumeAsync(
+        string consumerTag = await _channel.BasicConsumeAsync(
             queue: _queueName,
             autoAck: false,
             consumer: consumer,
             cancellationToken: cancellationToken);
+
+        return consumerTag;
     }
 
     /// <summary>
@@ -109,16 +121,20 @@ internal sealed class RabbitMqSimulationSettingsConsumer
                 deliveryTag: eventArgs.DeliveryTag,
                 multiple: false);
 
-            Console.WriteLine(
-                $"Settings revision {command.Revision} applied: " +
-                $"{command.DeviceIds.Length} devices, " +
-                $"{command.PublishingIntervalMilliseconds} ms interval.");
+            _logger.LogInformation(
+                "Simulation settings revision {Revision} applied: " +
+                "{DeviceCount} devices, " +
+                "{PublishingIntervalMilliseconds} ms interval",
+                command.Revision,
+                command.DeviceIds.Length,
+                command.PublishingIntervalMilliseconds);
         }
         catch (Exception exception)
             when (exception is JsonException or ArgumentException)
         {
-            Console.WriteLine(
-                $"Settings command rejected: {exception.Message}");
+            _logger.LogWarning(
+                "Simulation settings command rejected: {Reason}",
+                exception.Message);
 
             await consumerChannel.BasicNackAsync(
                 deliveryTag: eventArgs.DeliveryTag,

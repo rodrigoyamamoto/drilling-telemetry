@@ -1,4 +1,4 @@
-using System.Text;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using RabbitMQ.Client;
@@ -15,6 +15,8 @@ internal sealed class RabbitMqTelemetryReadingPublisher
     private readonly string _queueName;
     private readonly BasicProperties _properties;
 
+    private readonly ILogger<RabbitMqTelemetryReadingPublisher> _logger;
+
     /// <summary>
     /// Initialises a RabbitMQ telemetry reading publisher.
     /// </summary>
@@ -24,15 +26,21 @@ internal sealed class RabbitMqTelemetryReadingPublisher
     /// <param name="queueName">
     /// Name of the destination queue.
     /// </param>
+    /// /// <param name="logger">
+    /// Records telemetry publishing information.
+    /// </param>
     public RabbitMqTelemetryReadingPublisher(
         IChannel channel,
-        string queueName)
+        string queueName,
+        ILogger<RabbitMqTelemetryReadingPublisher> logger)
     {
         ArgumentNullException.ThrowIfNull(channel);
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentNullException.ThrowIfNull(logger);
 
         _channel = channel;
         _queueName = queueName;
+        _logger = logger;
 
         _properties = new BasicProperties
         {
@@ -47,8 +55,8 @@ internal sealed class RabbitMqTelemetryReadingPublisher
     {
         ArgumentNullException.ThrowIfNull(reading);
 
-        string message = JsonSerializer.Serialize(reading);
-        byte[] body = Encoding.UTF8.GetBytes(message);
+        byte[] body =
+            JsonSerializer.SerializeToUtf8Bytes(reading);
 
         await _channel.BasicPublishAsync(
             exchange: string.Empty,
@@ -58,9 +66,14 @@ internal sealed class RabbitMqTelemetryReadingPublisher
             body: body,
             cancellationToken: cancellationToken);
 
-        Console.WriteLine($"Reading published to '{_queueName}':");
-        Console.WriteLine(message);
+        _logger.LogDebug(
+            "Telemetry reading from {DeviceId} published to " +
+            "{QueueName}: {PressurePsi} psi, " +
+            "{TemperatureCelsius} °C at {TimestampUtc:O}",
+            reading.DeviceId,
+            _queueName,
+            reading.PressurePsi,
+            reading.TemperatureCelsius,
+            reading.TimestampUtc);
     }
-
-
 }
