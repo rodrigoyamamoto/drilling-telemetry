@@ -7,8 +7,7 @@ using Scalar.AspNetCore;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
 RabbitMqOptions rabbitMqOptions =
     builder.Configuration
@@ -63,8 +62,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapSwagger(
-        "/openapi/{documentName}.json");
+    app.MapOpenApi();
 
     app.MapScalarApiReference(options =>
         options.WithTitle(
