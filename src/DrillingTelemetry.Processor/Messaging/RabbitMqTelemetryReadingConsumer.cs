@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Configuration;
+using DrillingTelemetry.Processor.Realtime;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -16,6 +17,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     private readonly RabbitMqOptions _rabbitMqOptions;
     private readonly ILogger<RabbitMqTelemetryReadingConsumer> _logger;
 
+    private readonly ITelemetryReadingBroadcaster
+        _telemetryReadingBroadcaster;
+
     /// <summary>
     /// Initialises a RabbitMQ telemetry reading consumer.
     /// </summary>
@@ -25,15 +29,19 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="logger">
     /// Records consumer lifecycle and message processing information.
     /// </param>
+    /// <param name="telemetryReadingBroadcaster"></param>
     public RabbitMqTelemetryReadingConsumer(
         IOptions<RabbitMqOptions> options,
-        ILogger<RabbitMqTelemetryReadingConsumer> logger)
+        ILogger<RabbitMqTelemetryReadingConsumer> logger,
+        ITelemetryReadingBroadcaster telemetryReadingBroadcaster)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
 
         _rabbitMqOptions = options.Value;
         _logger = logger;
+        _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
     }
 
     /// <inheritdoc />
@@ -140,6 +148,10 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 reading.PressurePsi,
                 reading.TemperatureCelsius,
                 reading.TimestampUtc);
+
+            await _telemetryReadingBroadcaster.BroadcastAsync(
+                reading,
+                eventArgs.CancellationToken);
 
             await consumerChannel.BasicAckAsync(
                 deliveryTag: eventArgs.DeliveryTag,

@@ -1,9 +1,15 @@
 ﻿using DrillingTelemetry.Processor.Configuration;
 using DrillingTelemetry.Processor.Messaging;
+using DrillingTelemetry.Processor.Realtime;
 
+WebApplicationBuilder builder =
+    WebApplication.CreateBuilder(args);
 
-HostApplicationBuilder builder =
-    Host.CreateApplicationBuilder(args);
+string[] allowedOrigins =
+    builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ??
+    throw new InvalidOperationException("CORS allowed origins are missing.");
 
 builder.Services
     .AddOptions<RabbitMqOptions>()
@@ -20,6 +26,31 @@ builder.Services
 builder.Services
     .AddHostedService<RabbitMqTelemetryReadingConsumer>();
 
-IHost host = builder.Build();
+builder.Services.AddSignalR();
 
-await host.RunAsync();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .WithMethods(
+                HttpMethods.Get,
+                HttpMethods.Post)
+            .AllowCredentials();
+    });
+});
+
+builder.Services.AddSingleton<
+    ITelemetryReadingBroadcaster,
+    SignalRTelemetryReadingBroadcaster>();
+
+WebApplication app = builder.Build();
+
+app.UseCors();
+
+app.MapHub<TelemetryHub>(
+    TelemetryHub.RoutePattern);
+
+await app.RunAsync();
