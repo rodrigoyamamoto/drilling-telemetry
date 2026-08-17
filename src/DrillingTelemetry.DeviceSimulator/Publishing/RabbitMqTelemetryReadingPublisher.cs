@@ -16,7 +16,7 @@ internal sealed class RabbitMqTelemetryReadingPublisher
     private readonly BasicProperties _properties;
 
     /// <summary>
-    /// Initializes a RabbitMQ telemetry reading publisher.
+    /// Initialises a RabbitMQ telemetry reading publisher.
     /// </summary>
     /// <param name="channel">
     /// RabbitMQ channel used to publish messages.

@@ -1,15 +1,15 @@
 namespace DrillingTelemetry.DeviceSimulator.Simulation;
 
 /// <summary>
-/// Represents an immutable snapshot of the simulation configuration.
+/// Represents an immutable snapshot of the simulation settings.
 /// </summary>
 internal sealed class SimulationSettings
 {
     /// <summary>
-    /// Initializes a simulation configuration snapshot.
+    /// Initialises a simulation settings snapshot.
     /// </summary>
-    /// <param name="version">
-    /// Monotonically increasing configuration version.
+    /// <param name="revision">
+    /// Monotonically increasing settings revision.
     /// </param>
     /// <param name="deviceIds">
     /// Devices included in each publishing cycle.
@@ -18,18 +18,18 @@ internal sealed class SimulationSettings
     /// Time waited between publishing cycles.
     /// </param>
     public SimulationSettings(
-        long version,
+        long revision,
         IReadOnlyList<string> deviceIds,
         TimeSpan publishingInterval)
     {
         ArgumentNullException.ThrowIfNull(deviceIds);
 
-        if (version <= 0)
+        if (revision <= 0)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(version),
-                version,
-                "The settings version must be greater than zero.");
+                nameof(revision),
+                revision,
+                "The settings revision must be greater than zero.");
         }
 
         if (deviceIds.Count == 0)
@@ -47,15 +47,15 @@ internal sealed class SimulationSettings
                 "The publishing interval must be greater than zero.");
         }
 
-        Version = version;
+        Revision = revision;
         DeviceIds = Array.AsReadOnly(deviceIds.ToArray());
         PublishingInterval = publishingInterval;
     }
 
     /// <summary>
-    /// Gets the configuration version.
+    /// Gets the settings revision.
     /// </summary>
-    public long Version { get; }
+    public long Revision { get; }
 
     /// <summary>
     /// Gets the devices included in each publishing cycle.

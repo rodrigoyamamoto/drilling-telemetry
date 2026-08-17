@@ -23,10 +23,10 @@ if (string.IsNullOrWhiteSpace(rabbitMqOptions.HostName))
 }
 
 if (string.IsNullOrWhiteSpace(
-        rabbitMqOptions.SettingsQueueName))
+        rabbitMqOptions.SimulationSettingsQueueName))
 {
     throw new InvalidOperationException(
-        "RabbitMQ settings queue name is missing.");
+        "RabbitMQ simulation settings queue name is missing.");
 }
 
 var connectionFactory = new ConnectionFactory
@@ -41,7 +41,7 @@ await using IChannel channel =
     await connection.CreateChannelAsync();
 
 await channel.QueueDeclareAsync(
-    queue: rabbitMqOptions.SettingsQueueName,
+    queue: rabbitMqOptions.SimulationSettingsQueueName,
     durable: true,
     exclusive: false,
     autoDelete: false,
@@ -50,7 +50,7 @@ await channel.QueueDeclareAsync(
 var commandPublisher =
     new RabbitMqSimulationSettingsCommandPublisher(
         channel,
-        rabbitMqOptions.SettingsQueueName);
+        rabbitMqOptions.SimulationSettingsQueueName);
 
 builder.Services
     .AddSingleton<ISimulationSettingsCommandPublisher>(

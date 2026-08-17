@@ -15,11 +15,11 @@ internal sealed class RandomTelemetryReadingGenerator : ITelemetryReadingGenerat
     private readonly double _maximumTemperatureCelsius;
 
     /// <summary>
-    /// Initializes a new instance of the
+    /// Initialises a new instance of the
     /// <see cref="RandomTelemetryReadingGenerator"/> class.
     /// </summary>
     /// <param name="timeProvider">Provides the current UTC time.</param>
-    /// <param name="random">Provides normalized random values.</param>
+    /// <param name="random">Provides normalised random values.</param>
     /// <param name="minimumPressurePsi">Minimum generated pressure.</param>
     /// <param name="maximumPressurePsi">Maximum generated pressure.</param>
     /// <param name="minimumTemperatureCelsius">
@@ -61,7 +61,7 @@ internal sealed class RandomTelemetryReadingGenerator : ITelemetryReadingGenerat
     }
 
     /// <summary>
-    /// Maps a normalized random value to the specified range.
+    /// Maps a normalised random value to the specified range.
     /// </summary>
     /// <param name="minimum">Inclusive minimum value.</param>
     /// <param name="maximum">Exclusive maximum value.</param>

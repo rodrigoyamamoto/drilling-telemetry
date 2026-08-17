@@ -13,10 +13,10 @@ internal sealed class TelemetrySimulation
     private readonly ITelemetryReadingPublisher _readingPublisher;
 
     private readonly TimeProvider _timeProvider;
-    private readonly SimulationSettingsStore _settingsStore;
+    private readonly SimulationSettingsState _settingsState;
 
     /// <summary>
-    /// Initializes a telemetry simulation.
+    /// Initialises a telemetry simulation.
     /// </summary>
     /// <param name="readingGenerator">
     /// Generator used to create telemetry readings.
@@ -27,24 +27,24 @@ internal sealed class TelemetrySimulation
     /// <param name="timeProvider">
     /// Provides the timer used between publishing cycles.
     /// </param>
-    /// <param name="settingsStore">
+    /// <param name="settingsState">
     /// Provides the current runtime simulation settings.
     /// </param>
     public TelemetrySimulation(
         ITelemetryReadingGenerator readingGenerator,
         ITelemetryReadingPublisher readingPublisher,
         TimeProvider timeProvider,
-        SimulationSettingsStore settingsStore)
+        SimulationSettingsState settingsState)
     {
         ArgumentNullException.ThrowIfNull(readingGenerator);
         ArgumentNullException.ThrowIfNull(readingPublisher);
         ArgumentNullException.ThrowIfNull(timeProvider);
-        ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(settingsState);
 
         _readingGenerator = readingGenerator;
         _readingPublisher = readingPublisher;
         _timeProvider = timeProvider;
-        _settingsStore = settingsStore;
+        _settingsState = settingsState;
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ internal sealed class TelemetrySimulation
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            SimulationSettings settings = _settingsStore.Current;
+            SimulationSettings settings = _settingsState.Current;
 
             await PublishCycleAsync(settings.DeviceIds, cancellationToken);
             await WaitForNextCycleAsync(settings, cancellationToken);
@@ -104,7 +104,7 @@ internal sealed class TelemetrySimulation
         using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         var delayTask = Task.Delay(settings.PublishingInterval, _timeProvider, waitCancellation.Token);
-        Task settingsChangedTask = _settingsStore.WaitForChangeAsync(settings.Version, waitCancellation.Token);
+        Task settingsChangedTask = _settingsState.WaitForChangeAsync(settings.Revision, waitCancellation.Token);
 
         await Task.WhenAny(
             delayTask,

@@ -47,9 +47,9 @@ public sealed class TelemetrySimulationTests
 
         var readingPublisher = new RecordingTelemetryReadingPublisher();
 
-        var settingsStore = new SimulationSettingsStore(
+        var settingsState = new SimulationSettingsState(
             new SimulationSettings(
-                version: 1,
+                revision: 1,
                 deviceIds,
                 publishingInterval: TimeSpan.FromSeconds(1)));
         
@@ -57,7 +57,7 @@ public sealed class TelemetrySimulationTests
             readingGenerator,
             readingPublisher,
             timeProvider,
-            settingsStore);
+            settingsState);
 
         // Act
         await simulation.PublishCycleAsync(
@@ -130,9 +130,9 @@ public sealed class TelemetrySimulationTests
 
         var readingPublisher = new RecordingTelemetryReadingPublisher();
 
-        var settingsStore = new SimulationSettingsStore(
+        var settingsState = new SimulationSettingsState(
             new SimulationSettings(
-                version: 1,
+                revision: 1,
                 deviceIds,
                 publishingInterval));
         
@@ -140,7 +140,7 @@ public sealed class TelemetrySimulationTests
             readingGenerator,
             readingPublisher,
             timeProvider,
-            settingsStore);
+            settingsState);
 
         using var cancellationTokenSource =
             new CancellationTokenSource();
@@ -231,17 +231,17 @@ public sealed class TelemetrySimulationTests
         var timeProvider = new FakeTimeProvider(currentTimeUtc);
 
         var initialSettings = new SimulationSettings(
-            version: 1,
+            revision: 1,
             deviceIds: initialDeviceIds,
             publishingInterval: TimeSpan.FromSeconds(30));
 
         var updatedSettings = new SimulationSettings(
-            version: 2,
+            revision: 2,
             deviceIds: updatedDeviceIds,
             publishingInterval: TimeSpan.FromMilliseconds(500));
 
-        var settingsStore =
-            new SimulationSettingsStore(initialSettings);
+        var settingsState =
+            new SimulationSettingsState(initialSettings);
 
         var readingGenerator = new FixedTelemetryReadingGenerator(
             timeProvider,
@@ -255,7 +255,7 @@ public sealed class TelemetrySimulationTests
             readingGenerator,
             readingPublisher,
             timeProvider,
-            settingsStore);
+            settingsState);
 
         using var cancellationTokenSource =
             new CancellationTokenSource();
@@ -270,7 +270,7 @@ public sealed class TelemetrySimulationTests
             readingPublisher.PublishedReadings
                 .Select(reading => reading.DeviceId));
 
-        settingsStore.Update(updatedSettings);
+        settingsState.Update(updatedSettings);
 
         await readingPublisher.WaitUntilCountAsync(
             expectedAfterUpdate.Length);
@@ -298,8 +298,8 @@ public sealed class TelemetrySimulationTests
                 .Select(reading => reading.DeviceId));
 
         Assert.Equal(
-            updatedSettings.Version,
-            settingsStore.Current.Version);
+            updatedSettings.Revision,
+            settingsState.Current.Revision);
     }
 
     /// <summary>

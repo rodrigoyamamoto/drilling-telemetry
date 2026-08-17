@@ -60,7 +60,7 @@ internal static class SimulationSettingsEndpoints
 
         var command = new UpdateSimulationSettingsCommand
         {
-            Version = request.Version,
+            Revision = request.Revision,
             DeviceIds = deviceIds,
             PublishingIntervalMilliseconds =
                 request.PublishingIntervalMilliseconds
@@ -80,11 +80,11 @@ internal static class SimulationSettingsEndpoints
         var validationErrors =
             new Dictionary<string, string[]>();
 
-        if (request.Version <= 0)
+        if (request.Revision <= 0)
         {
-            validationErrors[nameof(request.Version)] =
+            validationErrors[nameof(request.Revision)] =
             [
-                "Version must be greater than zero."
+                "Revision must be greater than zero."
             ];
         }
 

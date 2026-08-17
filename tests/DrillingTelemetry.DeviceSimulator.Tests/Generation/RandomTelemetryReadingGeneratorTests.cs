@@ -61,7 +61,7 @@ public sealed class RandomTelemetryReadingGeneratorTests
         private readonly Queue<double> _values;
 
         /// <summary>
-        /// Initializes the random source with values returned in sequence.
+        /// Initialises the random source with values returned in sequence.
         /// </summary>
         /// <param name="values">Values returned by successive calls.</param>
         public SequenceRandom(params double[] values)

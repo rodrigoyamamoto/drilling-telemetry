@@ -12,7 +12,7 @@ internal sealed class FixedTelemetryReadingGenerator : ITelemetryReadingGenerato
     private readonly double _temperatureCelsius;
 
     /// <summary>
-    /// Initializes a new instance of the
+    /// Initialises a new instance of the
     /// <see cref="FixedTelemetryReadingGenerator"/> class.
     /// </summary>
     /// <param name="timeProvider">

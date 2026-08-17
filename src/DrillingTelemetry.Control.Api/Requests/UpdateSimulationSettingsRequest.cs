@@ -6,9 +6,9 @@ namespace DrillingTelemetry.Control.Api.Requests;
 public sealed record UpdateSimulationSettingsRequest
 {
     /// <summary>
-    /// Gets the monotonically increasing settings version.
+    /// Gets the monotonically increasing settings revision.
     /// </summary>
-    public long Version { get; init; }
+    public long Revision { get; init; }
 
     /// <summary>
     /// Gets the devices included in each publishing cycle.

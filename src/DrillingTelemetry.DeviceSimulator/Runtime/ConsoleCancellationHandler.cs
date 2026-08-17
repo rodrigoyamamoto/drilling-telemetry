@@ -9,7 +9,7 @@ internal sealed class ConsoleCancellationHandler : IDisposable
         _cancellationTokenSource = new();
 
     /// <summary>
-    /// Initializes the handler and starts listening for Ctrl+C.
+    /// Initialises the handler and starts listening for Ctrl+C.
     /// </summary>
     public ConsoleCancellationHandler()
     {

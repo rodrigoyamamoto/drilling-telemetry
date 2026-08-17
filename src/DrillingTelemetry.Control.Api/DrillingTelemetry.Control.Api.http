@@ -4,7 +4,7 @@ POST {{baseUrl}}/api/simulation/settings
 Content-Type: application/json
 
 {
-  "version": 2,
+  "revision": 2,
   "deviceIds": [
     "DRILL-101",
     "DRILL-102"

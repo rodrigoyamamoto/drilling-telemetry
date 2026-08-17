@@ -6,9 +6,9 @@ namespace DrillingTelemetry.Contracts.Commands;
 public sealed class UpdateSimulationSettingsCommand
 {
     /// <summary>
-    /// Gets or sets the monotonically increasing settings version.
+    /// Gets or sets the monotonically increasing settings revision.
     /// </summary>
-    public long Version { get; set; }
+    public long Revision { get; set; }
 
     /// <summary>
     /// Gets or sets the devices included in each publishing cycle.
