@@ -4,15 +4,29 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
 
+    <!-- ASP.NET Core / API: OpenAPI document generation and API documentation UI (Scalar) -->
+    <ItemGroup>
+        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+        <PackageVersion Include="Scalar.AspNetCore" Version="2.16.20" />
+    </ItemGroup>
+
+    <!-- Hosting / DI / Validation: Generic Host, dependency injection, configuration and model validation -->
+    <ItemGroup>
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+        <PackageVersion Include="Microsoft.Extensions.Validation" Version="10.0.10" />
+    </ItemGroup>
+
+    <!-- Messaging: RabbitMQ client to publish and consume messages via AMQP -->
+    <ItemGroup>
+        <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
+    </ItemGroup>
+
+    <!-- Testing: Test SDK, xUnit framework, Test Explorer adapter and FakeTimeProvider -->
     <ItemGroup>
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-        <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
         <PackageVersion Include="xunit" Version="2.9.3" />
         <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
         <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.9.0" />
-        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
-        <PackageVersion Include="Scalar.AspNetCore" Version="2.16.20" />
-        <PackageVersion Include="Microsoft.Extensions.Validation" Version="10.0.10" />
     </ItemGroup>
 
 </Project>
