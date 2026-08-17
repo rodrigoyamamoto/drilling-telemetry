@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:5153
+
+POST {{baseUrl}}/api/simulation/settings
+Content-Type: application/json
+
+{
+  "version": 2,
+  "deviceIds": [
+    "DRILL-101",
+    "DRILL-102"
+  ],
+  "publishingIntervalMilliseconds": 500
+}
