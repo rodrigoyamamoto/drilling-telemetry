@@ -1,6 +1,7 @@
 using DrillingTelemetry.Control.Api.Configuration;
 using DrillingTelemetry.Control.Api.Endpoints;
 using DrillingTelemetry.Control.Api.Publishing;
+using DrillingTelemetry.Control.Api.RuntimeSettings;
 using RabbitMQ.Client;
 using Scalar.AspNetCore;
 
@@ -8,6 +9,10 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<
+    ISimulationSettingsRevisionProvider,
+    InMemorySimulationSettingsRevisionProvider>();
 
 RabbitMqOptions rabbitMqOptions =
     builder.Configuration

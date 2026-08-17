@@ -1,6 +1,7 @@
 using DrillingTelemetry.Contracts.Commands;
 using DrillingTelemetry.Control.Api.Publishing;
 using DrillingTelemetry.Control.Api.Requests;
+using DrillingTelemetry.Control.Api.RuntimeSettings;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace DrillingTelemetry.Control.Api.Endpoints;
@@ -41,10 +42,12 @@ internal static class SimulationSettingsEndpoints
     private async static Task<Results<Accepted, ValidationProblem>>
         UpdateSettingsAsync(
             UpdateSimulationSettingsRequest request,
+            ISimulationSettingsRevisionProvider revisionProvider,
             ISimulationSettingsCommandPublisher publisher,
             CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(revisionProvider);
         ArgumentNullException.ThrowIfNull(publisher);
 
         string[] deviceIds = request.DeviceIds ?? [];
@@ -60,7 +63,7 @@ internal static class SimulationSettingsEndpoints
 
         var command = new UpdateSimulationSettingsCommand
         {
-            Revision = request.Revision,
+            Revision = revisionProvider.GetNextRevision(),
             DeviceIds = deviceIds,
             PublishingIntervalMilliseconds =
                 request.PublishingIntervalMilliseconds
@@ -79,14 +82,6 @@ internal static class SimulationSettingsEndpoints
     {
         var validationErrors =
             new Dictionary<string, string[]>();
-
-        if (request.Revision <= 0)
-        {
-            validationErrors[nameof(request.Revision)] =
-            [
-                "Revision must be greater than zero."
-            ];
-        }
 
         if (deviceIds.Length == 0)
         {
