@@ -50,21 +50,10 @@ internal static class SimulationSettingsEndpoints
         ArgumentNullException.ThrowIfNull(revisionProvider);
         ArgumentNullException.ThrowIfNull(publisher);
 
-        string[] deviceIds = request.DeviceIds ?? [];
-
-        Dictionary<string, string[]> validationErrors =
-            Validate(request, deviceIds);
-
-        if (validationErrors.Count > 0)
-        {
-            return TypedResults.ValidationProblem(
-                validationErrors);
-        }
-
         var command = new UpdateSimulationSettingsCommand
         {
             Revision = revisionProvider.GetNextRevision(),
-            DeviceIds = deviceIds,
+            DeviceIds = request.DeviceIds,
             PublishingIntervalMilliseconds =
                 request.PublishingIntervalMilliseconds
         };
@@ -74,32 +63,5 @@ internal static class SimulationSettingsEndpoints
             cancellationToken);
 
         return TypedResults.Accepted((string?)null);
-    }
-
-    private static Dictionary<string, string[]> Validate(
-        UpdateSimulationSettingsRequest request,
-        string[] deviceIds)
-    {
-        var validationErrors =
-            new Dictionary<string, string[]>();
-
-        if (deviceIds.Length == 0)
-        {
-            validationErrors[nameof(request.DeviceIds)] =
-            [
-                "At least one device must be provided."
-            ];
-        }
-
-        if (request.PublishingIntervalMilliseconds <= 0)
-        {
-            validationErrors[
-                    nameof(request.PublishingIntervalMilliseconds)] =
-                [
-                    "Publishing interval must be greater than zero."
-                ];
-        }
-
-        return validationErrors;
     }
 }

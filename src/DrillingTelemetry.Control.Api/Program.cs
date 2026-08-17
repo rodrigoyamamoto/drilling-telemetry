@@ -9,6 +9,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services.AddValidation();
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<
     ISimulationSettingsRevisionProvider,
