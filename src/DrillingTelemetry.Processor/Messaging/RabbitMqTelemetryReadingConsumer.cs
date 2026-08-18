@@ -194,9 +194,11 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             }
 
             _logger.LogDebug(
-                "Telemetry reading received from {DeviceId}: " +
+                "Telemetry reading {SequenceNumber} received " +
+                "from {DeviceId}: " +
                 "{PressurePsi} psi, {TemperatureCelsius} °C at " +
                 "{TimestampUtc:O}",
+                reading.SequenceNumber,
                 reading.DeviceId,
                 reading.PressurePsi,
                 reading.TemperatureCelsius,

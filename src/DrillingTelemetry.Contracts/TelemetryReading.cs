@@ -11,6 +11,11 @@ public sealed class TelemetryReading
     public string DeviceId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the sequence number assigned by the device simulator.
+    /// </summary>
+    public long SequenceNumber { get; set; }
+
+    /// <summary>
     /// Gets or sets the pressure in pounds per square inch.
     /// </summary>
     public double PressurePsi { get; set; }

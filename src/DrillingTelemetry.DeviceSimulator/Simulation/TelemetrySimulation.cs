@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.DeviceSimulator.Generation;
 using DrillingTelemetry.DeviceSimulator.Publishing;
@@ -9,6 +10,9 @@ namespace DrillingTelemetry.DeviceSimulator.Simulation;
 /// </summary>
 internal sealed class TelemetrySimulation
 {
+    private readonly ConcurrentDictionary<string, long>
+        _sequenceNumbers = new(StringComparer.Ordinal);
+
     private readonly ITelemetryReadingGenerator _readingGenerator;
     private readonly ITelemetryReadingPublisher _readingPublisher;
 
@@ -67,8 +71,26 @@ internal sealed class TelemetrySimulation
             cancellationToken.ThrowIfCancellationRequested();
 
             TelemetryReading reading = _readingGenerator.Generate(deviceId);
+            reading.SequenceNumber = GetNextSequenceNumber(deviceId);
+
             await _readingPublisher.PublishAsync(reading, cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Gets the next sequence number for the specified device.
+    /// </summary>
+    /// <param name="deviceId">
+    /// Identifier of the device whose sequence is advanced.
+    /// </param>
+    /// <returns>The next sequence number for the device.</returns>
+    private long GetNextSequenceNumber(string deviceId)
+    {
+        return _sequenceNumbers.AddOrUpdate(
+            deviceId,
+            addValue: 1,
+            updateValueFactory: static (_, currentSequenceNumber) =>
+                checked(currentSequenceNumber + 1));
     }
 
     /// <summary>
