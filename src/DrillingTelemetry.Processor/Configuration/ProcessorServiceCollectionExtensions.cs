@@ -1,8 +1,11 @@
 using DrillingTelemetry.Processor.Messaging;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Persistence;
 using DrillingTelemetry.Processor.Processing;
 using DrillingTelemetry.Processor.Realtime;
 using DrillingTelemetry.Processor.Sequencing;
+using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace DrillingTelemetry.Processor.Configuration;
 
@@ -71,6 +74,30 @@ internal static class ProcessorServiceCollectionExtensions
                 "RabbitMQ telemetry consumer count must be greater than zero.")
             .ValidateOnStart();
 
+        services
+            .AddOptions<PostgresOptions>()
+            .BindConfiguration(PostgresOptions.SectionName)
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(options.HostName),
+                "PostgreSQL host name is missing.")
+            .Validate(
+                options => options.Port > 0,
+                "PostgreSQL port must be greater than zero.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(options.DatabaseName),
+                "PostgreSQL database name is missing.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(options.Username),
+                "PostgreSQL user name is missing.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(options.Password),
+                "PostgreSQL password is missing.")
+            .ValidateOnStart();
+
         services.AddSignalR();
 
         services.AddSingleton(TimeProvider.System);
@@ -78,6 +105,30 @@ internal static class ProcessorServiceCollectionExtensions
         services.AddSingleton<TelemetryProcessingMetrics>();
 
         services.AddSingleton<TelemetrySequenceTracker>();
+
+        services.AddSingleton(serviceProvider =>
+        {
+            PostgresOptions postgresOptions = serviceProvider
+                .GetRequiredService<IOptions<PostgresOptions>>()
+                .Value;
+
+            var connectionStringBuilder =
+                new NpgsqlConnectionStringBuilder
+                {
+                    Host = postgresOptions.HostName,
+                    Port = postgresOptions.Port,
+                    Database = postgresOptions.DatabaseName,
+                    Username = postgresOptions.Username,
+                    Password = postgresOptions.Password
+                };
+
+            return NpgsqlDataSource.Create(
+                connectionStringBuilder.ConnectionString);
+        });
+
+        services.AddSingleton<
+            ITelemetryReadingStore,
+            PostgresTelemetryReadingStore>();
 
         services.AddSingleton<
             ITelemetryReadingProcessor,

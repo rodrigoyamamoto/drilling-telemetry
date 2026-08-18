@@ -16,9 +16,19 @@
         <PackageVersion Include="Microsoft.Extensions.Validation" Version="10.0.10" />
     </ItemGroup>
 
+    <!-- Configuration: Local development environment file loading -->
+    <ItemGroup>
+        <PackageVersion Include="DotNetEnv" Version="3.2.0" />
+    </ItemGroup>
+
     <!-- Messaging: RabbitMQ client to publish and consume messages via AMQP -->
     <ItemGroup>
         <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
+    </ItemGroup>
+
+    <!-- Persistence: PostgreSQL data provider and connection pooling -->
+    <ItemGroup>
+        <PackageVersion Include="Npgsql" Version="10.0.3" />
     </ItemGroup>
 
     <!-- Testing: Test SDK, xUnit framework, Test Explorer adapter and FakeTimeProvider -->

@@ -79,7 +79,15 @@ public sealed class TelemetrySimulationTests
                     temperatureCelsius,
                     reading.TemperatureCelsius);
                 Assert.Equal(currentTimeUtc, reading.TimestampUtc);
+                Assert.NotEqual(
+                    Guid.Empty,
+                    reading.AcquisitionSessionId);
             });
+
+        Assert.Single(
+            readingPublisher.PublishedReadings
+                .Select(reading => reading.AcquisitionSessionId)
+                .Distinct());
     }
 
     /// <summary>

@@ -1,6 +1,8 @@
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Persistence;
 using DrillingTelemetry.Processor.Processing;
 using DrillingTelemetry.Processor.Realtime;
 using DrillingTelemetry.Processor.Sequencing;
@@ -13,6 +15,9 @@ namespace DrillingTelemetry.Processor.Tests.Processing;
 /// </summary>
 public sealed class TelemetryReadingProcessorTests
 {
+    private static readonly Guid AcquisitionSessionId =
+        Guid.Parse("3ef44c4f-7944-4c8d-8358-6faf73419d21");
+
     /// <summary>
     /// Verifies that a baseline and its next sequence are both broadcast.
     /// </summary>
@@ -218,6 +223,7 @@ public sealed class TelemetryReadingProcessorTests
             TimeProvider.System,
             new TelemetryProcessingMetrics(meterFactory),
             new TelemetrySequenceTracker(),
+            new InMemoryTelemetryReadingStore(),
             broadcaster,
             NullLogger<TelemetryReadingProcessor>.Instance);
     }
@@ -235,6 +241,7 @@ public sealed class TelemetryReadingProcessorTests
         return new TelemetryReading
         {
             DeviceId = deviceId,
+            AcquisitionSessionId = AcquisitionSessionId,
             SequenceNumber = sequenceNumber,
             PressurePsi = 8250,
             TemperatureCelsius = 117.5,
@@ -258,6 +265,45 @@ public sealed class TelemetryReadingProcessorTests
             Readings.Add(reading);
 
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class InMemoryTelemetryReadingStore
+        : ITelemetryReadingStore
+    {
+        private readonly Dictionary<(
+            string DeviceId,
+            Guid AcquisitionSessionId,
+            long SequenceNumber),
+            string> _payloads = [];
+
+        /// <inheritdoc />
+        public Task<TelemetryReadingStoreResult> StoreAsync(
+            TelemetryReading reading,
+            CancellationToken cancellationToken)
+        {
+            var key = (
+                reading.DeviceId,
+                reading.AcquisitionSessionId,
+                reading.SequenceNumber);
+
+            string payload = JsonSerializer.Serialize(reading);
+
+            if (_payloads.TryAdd(key, payload))
+            {
+                return Task.FromResult(
+                    TelemetryReadingStoreResult.Stored);
+            }
+
+            TelemetryReadingStoreResult result =
+                string.Equals(
+                    _payloads[key],
+                    payload,
+                    StringComparison.Ordinal)
+                    ? TelemetryReadingStoreResult.Duplicate
+                    : TelemetryReadingStoreResult.Conflict;
+
+            return Task.FromResult(result);
         }
     }
 

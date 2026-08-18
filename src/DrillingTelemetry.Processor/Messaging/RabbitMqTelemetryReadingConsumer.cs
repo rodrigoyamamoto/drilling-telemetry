@@ -252,6 +252,12 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                     "The telemetry device identifier is empty.");
             }
 
+            if (reading.AcquisitionSessionId == Guid.Empty)
+            {
+                throw new JsonException(
+                    "The telemetry acquisition session is empty.");
+            }
+
             if (reading.SequenceNumber <= 0)
             {
                 throw new JsonException(
@@ -259,9 +265,20 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                     "than zero.");
             }
 
-            await _telemetryReadingProcessor.ProcessAsync(
-                reading,
-                eventArgs.CancellationToken);
+            TelemetryProcessingResult processingResult =
+                await _telemetryReadingProcessor.ProcessAsync(
+                    reading,
+                    eventArgs.CancellationToken);
+
+            if (processingResult == TelemetryProcessingResult.Conflict)
+            {
+                await RejectDeliveryAsync(
+                    consumerChannel,
+                    eventArgs.DeliveryTag,
+                    requeue: false);
+
+                return;
+            }
 
             await consumerChannel.BasicAckAsync(
                 deliveryTag: eventArgs.DeliveryTag,
@@ -278,7 +295,8 @@ internal sealed class RabbitMqTelemetryReadingConsumer
 
             await RejectDeliveryAsync(
                 consumerChannel,
-                eventArgs.DeliveryTag);
+                eventArgs.DeliveryTag,
+                requeue: false);
         }
         catch (OperationCanceledException)
             when (eventArgs.CancellationToken.IsCancellationRequested)
@@ -298,12 +316,13 @@ internal sealed class RabbitMqTelemetryReadingConsumer
 
             await RejectDeliveryAsync(
                 consumerChannel,
-                eventArgs.DeliveryTag);
+                eventArgs.DeliveryTag,
+                requeue: true);
         }
     }
 
     /// <summary>
-    /// Rejects a delivery without requeueing it and records channel failures.
+    /// Negatively acknowledges a delivery and records channel failures.
     /// </summary>
     /// <param name="channel">
     /// Channel on which the delivery was received.
@@ -311,16 +330,20 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="deliveryTag">
     /// RabbitMQ delivery identifier.
     /// </param>
+    /// <param name="requeue">
+    /// Whether RabbitMQ should make the delivery available again.
+    /// </param>
     private async Task RejectDeliveryAsync(
         IChannel channel,
-        ulong deliveryTag)
+        ulong deliveryTag,
+        bool requeue)
     {
         try
         {
             await channel.BasicNackAsync(
                 deliveryTag: deliveryTag,
                 multiple: false,
-                requeue: false,
+                requeue: requeue,
                 cancellationToken: CancellationToken.None);
         }
         catch (Exception exception)
@@ -331,5 +354,4 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 deliveryTag);
         }
     }
-
 }

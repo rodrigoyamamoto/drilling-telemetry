@@ -7,21 +7,32 @@ namespace DrillingTelemetry.Processor.Sequencing;
 /// </summary>
 internal sealed class TelemetrySequenceTracker
 {
-    private readonly ConcurrentDictionary<string, long>
-        _lastSequenceNumbers = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<TelemetryStreamKey, long>
+        _lastSequenceNumbers = [];
 
     /// <summary>
     /// Records a sequence number and classifies its position relative to the
     /// last sequence observed for the device.
     /// </summary>
     /// <param name="deviceId">Identifier of the telemetry device.</param>
+    /// <param name="acquisitionSessionId">
+    /// Acquisition session that owns the sequence.
+    /// </param>
     /// <param name="sequenceNumber">Sequence number being observed.</param>
     /// <returns>The result of observing the sequence number.</returns>
     public TelemetrySequenceObservation Observe(
         string deviceId,
+        Guid acquisitionSessionId,
         long sequenceNumber)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+
+        if (acquisitionSessionId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "The acquisition session must not be empty.",
+                nameof(acquisitionSessionId));
+        }
 
         if (sequenceNumber <= 0)
         {
@@ -31,14 +42,18 @@ internal sealed class TelemetrySequenceTracker
                 "The sequence number must be greater than zero.");
         }
 
+        var streamKey = new TelemetryStreamKey(
+            deviceId,
+            acquisitionSessionId);
+
         while (true)
         {
             if (!_lastSequenceNumbers.TryGetValue(
-                    deviceId,
+                    streamKey,
                     out long previousSequenceNumber))
             {
                 if (_lastSequenceNumbers.TryAdd(
-                        deviceId,
+                        streamKey,
                         sequenceNumber))
                 {
                     return new TelemetrySequenceObservation(
@@ -64,7 +79,7 @@ internal sealed class TelemetrySequenceTracker
             }
 
             if (!_lastSequenceNumbers.TryUpdate(
-                    deviceId,
+                    streamKey,
                     sequenceNumber,
                     previousSequenceNumber))
             {
@@ -85,6 +100,10 @@ internal sealed class TelemetrySequenceTracker
                 gapSize);
         }
     }
+
+    private readonly record struct TelemetryStreamKey(
+        string DeviceId,
+        Guid AcquisitionSessionId);
 }
 
 /// <summary>

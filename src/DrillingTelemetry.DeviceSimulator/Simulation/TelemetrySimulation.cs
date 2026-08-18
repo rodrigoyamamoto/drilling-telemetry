@@ -13,6 +13,8 @@ internal sealed class TelemetrySimulation
     private readonly ConcurrentDictionary<string, long>
         _sequenceNumbers = new(StringComparer.Ordinal);
 
+    private readonly Guid _acquisitionSessionId = Guid.NewGuid();
+
     private readonly ITelemetryReadingGenerator _readingGenerator;
     private readonly ITelemetryReadingPublisher _readingPublisher;
 
@@ -71,6 +73,7 @@ internal sealed class TelemetrySimulation
             cancellationToken.ThrowIfCancellationRequested();
 
             TelemetryReading reading = _readingGenerator.Generate(deviceId);
+            reading.AcquisitionSessionId = _acquisitionSessionId;
             reading.SequenceNumber = GetNextSequenceNumber(deviceId);
 
             await _readingPublisher.PublishAsync(reading, cancellationToken);

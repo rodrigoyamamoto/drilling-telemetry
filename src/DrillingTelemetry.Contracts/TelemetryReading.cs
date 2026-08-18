@@ -11,6 +11,11 @@ public sealed class TelemetryReading
     public string DeviceId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the acquisition session that owns the sequence number.
+    /// </summary>
+    public Guid AcquisitionSessionId { get; set; }
+
+    /// <summary>
     /// Gets or sets the sequence number assigned by the device simulator.
     /// </summary>
     public long SequenceNumber { get; set; }

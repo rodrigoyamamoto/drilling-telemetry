@@ -1,5 +1,6 @@
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Persistence;
 using DrillingTelemetry.Processor.Realtime;
 using DrillingTelemetry.Processor.Sequencing;
 
@@ -15,6 +16,7 @@ internal sealed class TelemetryReadingProcessor
     private readonly TimeProvider _timeProvider;
     private readonly TelemetryProcessingMetrics _metrics;
     private readonly TelemetrySequenceTracker _sequenceTracker;
+    private readonly ITelemetryReadingStore _telemetryReadingStore;
     private readonly ITelemetryReadingBroadcaster _telemetryReadingBroadcaster;
     private readonly ILogger<TelemetryReadingProcessor> _logger;
 
@@ -28,6 +30,9 @@ internal sealed class TelemetryReadingProcessor
     /// <param name="sequenceTracker">
     /// Tracks the sequence observed for each telemetry device.
     /// </param>
+    /// <param name="telemetryReadingStore">
+    /// Persists readings using their durable idempotency key.
+    /// </param>
     /// <param name="telemetryReadingBroadcaster">
     /// Broadcasts accepted readings to connected clients.
     /// </param>
@@ -38,37 +43,69 @@ internal sealed class TelemetryReadingProcessor
         TimeProvider timeProvider,
         TelemetryProcessingMetrics metrics,
         TelemetrySequenceTracker sequenceTracker,
+        ITelemetryReadingStore telemetryReadingStore,
         ITelemetryReadingBroadcaster telemetryReadingBroadcaster,
         ILogger<TelemetryReadingProcessor> logger)
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(metrics);
         ArgumentNullException.ThrowIfNull(sequenceTracker);
+        ArgumentNullException.ThrowIfNull(telemetryReadingStore);
         ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
         ArgumentNullException.ThrowIfNull(logger);
 
         _timeProvider = timeProvider;
         _metrics = metrics;
         _sequenceTracker = sequenceTracker;
+        _telemetryReadingStore = telemetryReadingStore;
         _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public async Task ProcessAsync(
+    public async Task<TelemetryProcessingResult> ProcessAsync(
         TelemetryReading reading,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(reading);
 
+        TelemetryReadingStoreResult storeResult =
+            await _telemetryReadingStore.StoreAsync(
+                reading,
+                cancellationToken);
+
+        if (storeResult == TelemetryReadingStoreResult.Duplicate)
+        {
+            RecordDuplicate(reading);
+
+            return TelemetryProcessingResult.Duplicate;
+        }
+
+        if (storeResult == TelemetryReadingStoreResult.Conflict)
+        {
+            _metrics.RecordConflictingReading();
+
+            _logger.LogError(
+                "Conflicting telemetry content received for " +
+                "{DeviceId} sequence {SequenceNumber}",
+                reading.DeviceId,
+                reading.SequenceNumber);
+
+            return TelemetryProcessingResult.Conflict;
+        }
+
         TelemetrySequenceObservation observation =
             _sequenceTracker.Observe(
                 reading.DeviceId,
+                reading.AcquisitionSessionId,
                 reading.SequenceNumber);
 
         if (!ShouldPublish(reading, observation))
         {
-            return;
+            return observation.Status ==
+                TelemetrySequenceStatus.OutOfOrder
+                    ? TelemetryProcessingResult.LateArrival
+                    : TelemetryProcessingResult.Duplicate;
         }
 
         _logger.LogDebug(
@@ -88,6 +125,8 @@ internal sealed class TelemetryReadingProcessor
 
         _metrics.RecordReadingProcessed(
             _timeProvider.GetUtcNow() - reading.TimestampUtc);
+
+        return TelemetryProcessingResult.Published;
     }
 
     /// <summary>
@@ -123,13 +162,7 @@ internal sealed class TelemetryReadingProcessor
                 return true;
 
             case TelemetrySequenceStatus.Duplicate:
-                _metrics.RecordDuplicateReading();
-
-                _logger.LogWarning(
-                    "Duplicate telemetry sequence {SequenceNumber} " +
-                    "received from {DeviceId}",
-                    reading.SequenceNumber,
-                    reading.DeviceId);
+                RecordDuplicate(reading);
                 return false;
 
             case TelemetrySequenceStatus.OutOfOrder:
@@ -153,5 +186,20 @@ internal sealed class TelemetryReadingProcessor
                     $"Unsupported telemetry sequence status " +
                     $"'{observation.Status}'.");
         }
+    }
+
+    /// <summary>
+    /// Records an identical telemetry reading that requires no further work.
+    /// </summary>
+    /// <param name="reading">Duplicate telemetry reading.</param>
+    private void RecordDuplicate(TelemetryReading reading)
+    {
+        _metrics.RecordDuplicateReading();
+
+        _logger.LogWarning(
+            "Duplicate telemetry sequence {SequenceNumber} " +
+            "received from {DeviceId}",
+            reading.SequenceNumber,
+            reading.DeviceId);
     }
 }

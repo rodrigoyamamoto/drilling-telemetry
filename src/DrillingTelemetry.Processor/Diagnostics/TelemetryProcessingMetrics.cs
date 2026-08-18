@@ -17,6 +17,7 @@ internal sealed class TelemetryProcessingMetrics
     private readonly Counter<long> _invalidMessages;
     private readonly Counter<long> _sequenceGaps;
     private readonly Counter<long> _duplicateReadings;
+    private readonly Counter<long> _conflictingReadings;
     private readonly Counter<long> _outOfOrderReadings;
     private readonly Histogram<double> _endToEndDuration;
     private readonly Histogram<long> _sequenceGapSize;
@@ -63,6 +64,13 @@ internal sealed class TelemetryProcessingMetrics
             unit: "{reading}",
             description:
                 "Number of duplicate telemetry readings received.");
+
+        _conflictingReadings = meter.CreateCounter<long>(
+            name: "drilling.telemetry.readings.conflicting",
+            unit: "{reading}",
+            description:
+                "Number of readings that reused an identity with " +
+                "different content.");
 
         _outOfOrderReadings = meter.CreateCounter<long>(
             name: "drilling.telemetry.readings.out_of_order",
@@ -121,6 +129,14 @@ internal sealed class TelemetryProcessingMetrics
     public void RecordDuplicateReading()
     {
         _duplicateReadings.Add(1);
+    }
+
+    /// <summary>
+    /// Records a reading that conflicts with a stored telemetry identity.
+    /// </summary>
+    public void RecordConflictingReading()
+    {
+        _conflictingReadings.Add(1);
     }
 
     /// <summary>

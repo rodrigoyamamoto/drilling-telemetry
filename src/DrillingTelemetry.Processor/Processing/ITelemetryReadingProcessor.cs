@@ -15,7 +15,7 @@ internal interface ITelemetryReadingProcessor
     /// <param name="cancellationToken">
     /// Signals that processing should be cancelled.
     /// </param>
-    Task ProcessAsync(
+    Task<TelemetryProcessingResult> ProcessAsync(
         TelemetryReading reading,
         CancellationToken cancellationToken);
 }
