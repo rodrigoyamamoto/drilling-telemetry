@@ -49,6 +49,10 @@ internal static class ProcessorServiceCollectionExtensions
                     !string.IsNullOrWhiteSpace(
                         options.TelemetryReadingsQueueName),
                 "RabbitMQ telemetry readings queue name is missing.")
+            .Validate(
+                options =>
+                    options.TelemetryPrefetchCount > 0,
+                "RabbitMQ telemetry prefetch count must be greater than zero.")
             .ValidateOnStart();
 
         services.AddSignalR();

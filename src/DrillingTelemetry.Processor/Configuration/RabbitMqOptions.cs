@@ -20,4 +20,9 @@ internal sealed class RabbitMqOptions
     /// </summary>
     public string TelemetryReadingsQueueName { get; set; } =
         string.Empty;
+
+    /// <summary>
+    /// Gets or sets the maximum number of unacknowledged telemetry readings.
+    /// </summary>
+    public ushort TelemetryPrefetchCount { get; set; }
 }

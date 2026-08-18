@@ -88,7 +88,8 @@ internal sealed class RabbitMqTelemetryReadingConsumer
 
         await channel.BasicQosAsync(
             prefetchSize: 0,
-            prefetchCount: 1,
+            prefetchCount:
+                _rabbitMqOptions.TelemetryPrefetchCount,
             global: false,
             cancellationToken: stoppingToken);
 
@@ -103,8 +104,10 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             cancellationToken: stoppingToken);
 
         _logger.LogInformation(
-            "Waiting for telemetry readings from {QueueName}",
-            _rabbitMqOptions.TelemetryReadingsQueueName);
+            "Waiting for telemetry readings from {QueueName} " +
+            "with a prefetch count of {PrefetchCount}",
+            _rabbitMqOptions.TelemetryReadingsQueueName,
+            _rabbitMqOptions.TelemetryPrefetchCount);
 
         try
         {
