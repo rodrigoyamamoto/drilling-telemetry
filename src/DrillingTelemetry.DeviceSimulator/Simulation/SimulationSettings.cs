@@ -39,6 +39,13 @@ internal sealed class SimulationSettings
                 nameof(deviceIds));
         }
 
+        if (deviceIds.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException(
+                "Device identifiers must not be empty.",
+                nameof(deviceIds));
+        }
+
         if (publishingInterval <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(
