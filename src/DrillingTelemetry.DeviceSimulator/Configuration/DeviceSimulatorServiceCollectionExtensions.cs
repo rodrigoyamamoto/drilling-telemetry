@@ -1,4 +1,5 @@
 using DrillingTelemetry.DeviceSimulator.Generation;
+using DrillingTelemetry.DeviceSimulator.Diagnostics;
 using DrillingTelemetry.DeviceSimulator.Runtime;
 using DrillingTelemetry.DeviceSimulator.RuntimeSettings;
 using DrillingTelemetry.DeviceSimulator.Simulation;
@@ -76,6 +77,8 @@ internal static class DeviceSimulatorServiceCollectionExtensions
             .ValidateOnStart();
 
         services.AddSingleton(TimeProvider.System);
+
+        services.AddSingleton<TelemetryPublishingMetrics>();
 
         services.AddSingleton(CreateInitialSettingsState);
 

@@ -1,4 +1,5 @@
 using DrillingTelemetry.DeviceSimulator.Configuration;
+using DrillingTelemetry.DeviceSimulator.Diagnostics;
 using DrillingTelemetry.DeviceSimulator.Generation;
 using DrillingTelemetry.DeviceSimulator.Publishing;
 using DrillingTelemetry.DeviceSimulator.RuntimeSettings;
@@ -18,6 +19,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
     private readonly SimulationSettingsState _settingsState;
     private readonly SimulationSettingsCommandApplier _settingsCommandApplier;
     private readonly TimeProvider _timeProvider;
+    private readonly TelemetryPublishingMetrics _publishingMetrics;
     private readonly ILogger<TelemetrySimulationWorker> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -39,6 +41,9 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
     /// <param name="timeProvider">
     /// Provides time used by the simulation.
     /// </param>
+    /// <param name="publishingMetrics">
+    /// Records telemetry publishing measurements.
+    /// </param>
     /// <param name="loggerFactory">
     /// Creates loggers for RabbitMQ components owned by the worker.
     /// </param>
@@ -51,6 +56,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         SimulationSettingsState settingsState,
         SimulationSettingsCommandApplier settingsCommandApplier,
         TimeProvider timeProvider,
+        TelemetryPublishingMetrics publishingMetrics,
         ILoggerFactory loggerFactory,
         ILogger<TelemetrySimulationWorker> logger)
     {
@@ -59,6 +65,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         ArgumentNullException.ThrowIfNull(settingsState);
         ArgumentNullException.ThrowIfNull(settingsCommandApplier);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(publishingMetrics);
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -67,6 +74,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         _settingsState = settingsState;
         _settingsCommandApplier = settingsCommandApplier;
         _timeProvider = timeProvider;
+        _publishingMetrics = publishingMetrics;
         _loggerFactory = loggerFactory;
         _logger = logger;
     }
@@ -104,6 +112,8 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
             new RabbitMqTelemetryReadingPublisher(
                 telemetryChannel,
                 _rabbitMqOptions.TelemetryReadingsQueueName,
+                _timeProvider,
+                _publishingMetrics,
                 _loggerFactory.CreateLogger<
                     RabbitMqTelemetryReadingPublisher>());
 

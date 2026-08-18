@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Configuration;
+using DrillingTelemetry.Processor.Diagnostics;
 using DrillingTelemetry.Processor.Realtime;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -15,6 +16,8 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     : BackgroundService
 {
     private readonly RabbitMqOptions _rabbitMqOptions;
+    private readonly TimeProvider _timeProvider;
+    private readonly TelemetryProcessingMetrics _metrics;
     private readonly ILogger<RabbitMqTelemetryReadingConsumer> _logger;
 
     private readonly ITelemetryReadingBroadcaster
@@ -29,18 +32,32 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="logger">
     /// Records consumer lifecycle and message processing information.
     /// </param>
-    /// <param name="telemetryReadingBroadcaster"></param>
+    /// <param name="timeProvider">
+    /// Provides the current UTC time used to calculate latency.
+    /// </param>
+    /// <param name="metrics">
+    /// Records telemetry processing measurements.
+    /// </param>
+    /// <param name="telemetryReadingBroadcaster">
+    /// Broadcasts processed readings to connected clients.
+    /// </param>
     public RabbitMqTelemetryReadingConsumer(
         IOptions<RabbitMqOptions> options,
         ILogger<RabbitMqTelemetryReadingConsumer> logger,
+        TimeProvider timeProvider,
+        TelemetryProcessingMetrics metrics,
         ITelemetryReadingBroadcaster telemetryReadingBroadcaster)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(metrics);
         ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
 
         _rabbitMqOptions = options.Value;
         _logger = logger;
+        _timeProvider = timeProvider;
+        _metrics = metrics;
         _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
     }
 
@@ -156,9 +173,15 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             await consumerChannel.BasicAckAsync(
                 deliveryTag: eventArgs.DeliveryTag,
                 multiple: false);
+
+            _metrics.RecordReadingProcessed(
+                _timeProvider.GetUtcNow() -
+                reading.TimestampUtc);
         }
         catch (JsonException exception)
         {
+            _metrics.RecordInvalidMessage();
+
             _logger.LogWarning(
                 exception,
                 "Invalid telemetry message received");
