@@ -1,6 +1,7 @@
 using DrillingTelemetry.Contracts.Commands;
 using DrillingTelemetry.Control.Api.Publishing;
 using DrillingTelemetry.Control.Api.Requests;
+using DrillingTelemetry.Control.Api.Responses;
 using DrillingTelemetry.Control.Api.RuntimeSettings;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -33,13 +34,14 @@ internal static class SimulationSettingsEndpoints
             .WithSummary("Updates the running simulation settings.")
             .WithDescription(
                 "Publishes a command that updates the simulation without restarting it.")
-            .Produces(StatusCodes.Status202Accepted)
+            .Produces<UpdateSimulationSettingsResponse>(
+                StatusCodes.Status202Accepted)
             .ProducesValidationProblem();
 
         return group;
     }
 
-    private async static Task<Results<Accepted, ValidationProblem>>
+    private async static Task<Results<Accepted<UpdateSimulationSettingsResponse>, ValidationProblem>>
         UpdateSettingsAsync(
             UpdateSimulationSettingsRequest request,
             ISimulationSettingsRevisionProvider revisionProvider,
@@ -50,9 +52,11 @@ internal static class SimulationSettingsEndpoints
         ArgumentNullException.ThrowIfNull(revisionProvider);
         ArgumentNullException.ThrowIfNull(publisher);
 
+        long revision = revisionProvider.GetNextRevision();
+
         var command = new UpdateSimulationSettingsCommand
         {
-            Revision = revisionProvider.GetNextRevision(),
+            Revision = revision,
             DeviceIds = request.DeviceIds,
             PublishingIntervalMilliseconds =
                 request.PublishingIntervalMilliseconds
@@ -62,6 +66,11 @@ internal static class SimulationSettingsEndpoints
             command,
             cancellationToken);
 
-        return TypedResults.Accepted((string?)null);
+        var response = new UpdateSimulationSettingsResponse(
+            revision);
+
+        return TypedResults.Accepted(
+            uri: (string?)null,
+            value: response);
     }
 }
