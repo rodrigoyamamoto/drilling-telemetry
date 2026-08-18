@@ -2,8 +2,7 @@ using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Configuration;
 using DrillingTelemetry.Processor.Diagnostics;
-using DrillingTelemetry.Processor.Realtime;
-using DrillingTelemetry.Processor.Sequencing;
+using DrillingTelemetry.Processor.Processing;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -23,13 +22,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         "x-dead-letter-routing-key";
 
     private readonly RabbitMqOptions _rabbitMqOptions;
-    private readonly TimeProvider _timeProvider;
     private readonly TelemetryProcessingMetrics _metrics;
-    private readonly TelemetrySequenceTracker _sequenceTracker;
+    private readonly ITelemetryReadingProcessor _telemetryReadingProcessor;
     private readonly ILogger<RabbitMqTelemetryReadingConsumer> _logger;
-
-    private readonly ITelemetryReadingBroadcaster
-        _telemetryReadingBroadcaster;
 
     /// <summary>
     /// Initialises a RabbitMQ telemetry reading consumer.
@@ -40,39 +35,27 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="logger">
     /// Records consumer lifecycle and message processing information.
     /// </param>
-    /// <param name="timeProvider">
-    /// Provides the current UTC time used to calculate latency.
-    /// </param>
     /// <param name="metrics">
     /// Records telemetry processing measurements.
     /// </param>
-    /// <param name="sequenceTracker">
-    /// Tracks the sequence observed for each telemetry device.
-    /// </param>
-    /// <param name="telemetryReadingBroadcaster">
-    /// Broadcasts processed readings to connected clients.
+    /// <param name="telemetryReadingProcessor">
+    /// Applies the processing policy to valid telemetry readings.
     /// </param>
     public RabbitMqTelemetryReadingConsumer(
         IOptions<RabbitMqOptions> options,
         ILogger<RabbitMqTelemetryReadingConsumer> logger,
-        TimeProvider timeProvider,
         TelemetryProcessingMetrics metrics,
-        TelemetrySequenceTracker sequenceTracker,
-        ITelemetryReadingBroadcaster telemetryReadingBroadcaster)
+        ITelemetryReadingProcessor telemetryReadingProcessor)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(metrics);
-        ArgumentNullException.ThrowIfNull(sequenceTracker);
-        ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
+        ArgumentNullException.ThrowIfNull(telemetryReadingProcessor);
 
         _rabbitMqOptions = options.Value;
         _logger = logger;
-        _timeProvider = timeProvider;
         _metrics = metrics;
-        _sequenceTracker = sequenceTracker;
-        _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
+        _telemetryReadingProcessor = telemetryReadingProcessor;
     }
 
     /// <inheritdoc />
@@ -276,27 +259,7 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                     "than zero.");
             }
 
-            TelemetrySequenceObservation sequenceObservation =
-                _sequenceTracker.Observe(
-                    reading.DeviceId,
-                    reading.SequenceNumber);
-
-            RecordSequenceObservation(
-                reading,
-                sequenceObservation);
-
-            _logger.LogDebug(
-                "Telemetry reading {SequenceNumber} received " +
-                "from {DeviceId}: " +
-                "{PressurePsi} psi, {TemperatureCelsius} °C at " +
-                "{TimestampUtc:O}",
-                reading.SequenceNumber,
-                reading.DeviceId,
-                reading.PressurePsi,
-                reading.TemperatureCelsius,
-                reading.TimestampUtc);
-
-            await _telemetryReadingBroadcaster.BroadcastAsync(
+            await _telemetryReadingProcessor.ProcessAsync(
                 reading,
                 eventArgs.CancellationToken);
 
@@ -304,9 +267,6 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 deliveryTag: eventArgs.DeliveryTag,
                 multiple: false);
 
-            _metrics.RecordReadingProcessed(
-                _timeProvider.GetUtcNow() -
-                reading.TimestampUtc);
         }
         catch (JsonException exception)
         {
@@ -372,60 +332,4 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         }
     }
 
-    /// <summary>
-    /// Records sequence anomalies without discarding the telemetry reading.
-    /// </summary>
-    /// <param name="reading">Telemetry reading being processed.</param>
-    /// <param name="observation">
-    /// Result of comparing the reading with the previously observed sequence.
-    /// </param>
-    private void RecordSequenceObservation(
-        TelemetryReading reading,
-        TelemetrySequenceObservation observation)
-    {
-        switch (observation.Status)
-        {
-            case TelemetrySequenceStatus.Gap:
-                _metrics.RecordSequenceGap(
-                    observation.GapSize);
-
-                _logger.LogWarning(
-                    "Telemetry sequence gap detected for {DeviceId}: " +
-                    "received {SequenceNumber} after " +
-                    "{PreviousSequenceNumber}; " +
-                    "{GapSize} sequence numbers were skipped",
-                    reading.DeviceId,
-                    reading.SequenceNumber,
-                    observation.PreviousSequenceNumber,
-                    observation.GapSize);
-                break;
-
-            case TelemetrySequenceStatus.Duplicate:
-                _metrics.RecordDuplicateReading();
-
-                _logger.LogWarning(
-                    "Duplicate telemetry sequence {SequenceNumber} " +
-                    "received from {DeviceId}",
-                    reading.SequenceNumber,
-                    reading.DeviceId);
-                break;
-
-            case TelemetrySequenceStatus.OutOfOrder:
-                _metrics.RecordOutOfOrderReading();
-
-                _logger.LogWarning(
-                    "Out-of-order telemetry sequence {SequenceNumber} " +
-                    "received from {DeviceId} after " +
-                    "{PreviousSequenceNumber}",
-                    reading.SequenceNumber,
-                    reading.DeviceId,
-                    observation.PreviousSequenceNumber);
-                break;
-
-            case TelemetrySequenceStatus.Baseline:
-            case TelemetrySequenceStatus.InOrder:
-            default:
-                break;
-        }
-    }
 }

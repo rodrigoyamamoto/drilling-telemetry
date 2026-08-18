@@ -15,4 +15,8 @@
         <ProjectReference Include="..\DrillingTelemetry.Contracts\DrillingTelemetry.Contracts.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="DrillingTelemetry.Processor.Tests"/>
+    </ItemGroup>
+
 </Project>

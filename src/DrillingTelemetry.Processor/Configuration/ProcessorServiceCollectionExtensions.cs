@@ -1,5 +1,6 @@
 using DrillingTelemetry.Processor.Messaging;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Processing;
 using DrillingTelemetry.Processor.Realtime;
 using DrillingTelemetry.Processor.Sequencing;
 
@@ -77,6 +78,10 @@ internal static class ProcessorServiceCollectionExtensions
         services.AddSingleton<TelemetryProcessingMetrics>();
 
         services.AddSingleton<TelemetrySequenceTracker>();
+
+        services.AddSingleton<
+            ITelemetryReadingProcessor,
+            TelemetryReadingProcessor>();
 
         services.AddCors(options =>
         {
