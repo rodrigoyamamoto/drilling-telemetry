@@ -57,8 +57,13 @@ internal sealed class RabbitMqSimulationSettingsCommandPublisher
             await connectionFactory.CreateConnectionAsync(
                 cancellationToken);
 
+        var channelOptions = new CreateChannelOptions(
+            publisherConfirmationsEnabled: true,
+            publisherConfirmationTrackingEnabled: true);
+
         _channel =
             await _connection.CreateChannelAsync(
+                options: channelOptions,
                 cancellationToken: cancellationToken);
 
         await _channel.QueueDeclareAsync(
