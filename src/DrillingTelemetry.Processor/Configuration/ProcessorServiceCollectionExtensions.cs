@@ -53,6 +53,10 @@ internal static class ProcessorServiceCollectionExtensions
                 options =>
                     options.TelemetryPrefetchCount > 0,
                 "RabbitMQ telemetry prefetch count must be greater than zero.")
+            .Validate(
+                options =>
+                    options.TelemetryConsumerCount > 0,
+                "RabbitMQ telemetry consumer count must be greater than zero.")
             .ValidateOnStart();
 
         services.AddSignalR();

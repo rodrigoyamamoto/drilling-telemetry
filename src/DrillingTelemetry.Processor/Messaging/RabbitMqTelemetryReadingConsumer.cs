@@ -74,6 +74,37 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             await connectionFactory.CreateConnectionAsync(
                 stoppingToken);
 
+        Task[] consumerTasks = Enumerable
+            .Range(
+                start: 1,
+                count: _rabbitMqOptions.TelemetryConsumerCount)
+            .Select(consumerNumber =>
+                RunConsumerAsync(
+                    connection,
+                    consumerNumber,
+                    stoppingToken))
+            .ToArray();
+
+        await Task.WhenAll(consumerTasks);
+    }
+
+    /// <summary>
+    /// Runs one sequential telemetry consumer on its own RabbitMQ channel.
+    /// </summary>
+    /// <param name="connection">
+    /// Shared RabbitMQ connection used to create the consumer channel.
+    /// </param>
+    /// <param name="consumerNumber">
+    /// Consumer number used to identify the worker in logs.
+    /// </param>
+    /// <param name="stoppingToken">
+    /// Token used to stop the consumer gracefully.
+    /// </param>
+    private async Task RunConsumerAsync(
+        IConnection connection,
+        int consumerNumber,
+        CancellationToken stoppingToken)
+    {
         await using IChannel channel =
             await connection.CreateChannelAsync(
                 cancellationToken: stoppingToken);
@@ -104,8 +135,10 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             cancellationToken: stoppingToken);
 
         _logger.LogInformation(
-            "Waiting for telemetry readings from {QueueName} " +
+            "Telemetry consumer {ConsumerNumber} is waiting for " +
+            "readings from {QueueName} " +
             "with a prefetch count of {PrefetchCount}",
+            consumerNumber,
             _rabbitMqOptions.TelemetryReadingsQueueName,
             _rabbitMqOptions.TelemetryPrefetchCount);
 
