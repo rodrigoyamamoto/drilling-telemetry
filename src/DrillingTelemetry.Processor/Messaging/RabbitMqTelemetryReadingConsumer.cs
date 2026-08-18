@@ -3,6 +3,7 @@ using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Configuration;
 using DrillingTelemetry.Processor.Diagnostics;
 using DrillingTelemetry.Processor.Realtime;
+using DrillingTelemetry.Processor.Sequencing;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -18,6 +19,7 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     private readonly RabbitMqOptions _rabbitMqOptions;
     private readonly TimeProvider _timeProvider;
     private readonly TelemetryProcessingMetrics _metrics;
+    private readonly TelemetrySequenceTracker _sequenceTracker;
     private readonly ILogger<RabbitMqTelemetryReadingConsumer> _logger;
 
     private readonly ITelemetryReadingBroadcaster
@@ -38,6 +40,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="metrics">
     /// Records telemetry processing measurements.
     /// </param>
+    /// <param name="sequenceTracker">
+    /// Tracks the sequence observed for each telemetry device.
+    /// </param>
     /// <param name="telemetryReadingBroadcaster">
     /// Broadcasts processed readings to connected clients.
     /// </param>
@@ -46,18 +51,21 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         ILogger<RabbitMqTelemetryReadingConsumer> logger,
         TimeProvider timeProvider,
         TelemetryProcessingMetrics metrics,
+        TelemetrySequenceTracker sequenceTracker,
         ITelemetryReadingBroadcaster telemetryReadingBroadcaster)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(metrics);
+        ArgumentNullException.ThrowIfNull(sequenceTracker);
         ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
 
         _rabbitMqOptions = options.Value;
         _logger = logger;
         _timeProvider = timeProvider;
         _metrics = metrics;
+        _sequenceTracker = sequenceTracker;
         _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
     }
 
@@ -193,6 +201,28 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                     "The telemetry reading is empty.");
             }
 
+            if (string.IsNullOrWhiteSpace(reading.DeviceId))
+            {
+                throw new JsonException(
+                    "The telemetry device identifier is empty.");
+            }
+
+            if (reading.SequenceNumber <= 0)
+            {
+                throw new JsonException(
+                    "The telemetry sequence number must be greater " +
+                    "than zero.");
+            }
+
+            TelemetrySequenceObservation sequenceObservation =
+                _sequenceTracker.Observe(
+                    reading.DeviceId,
+                    reading.SequenceNumber);
+
+            RecordSequenceObservation(
+                reading,
+                sequenceObservation);
+
             _logger.LogDebug(
                 "Telemetry reading {SequenceNumber} received " +
                 "from {DeviceId}: " +
@@ -228,6 +258,63 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 deliveryTag: eventArgs.DeliveryTag,
                 multiple: false,
                 requeue: false);
+        }
+    }
+
+    /// <summary>
+    /// Records sequence anomalies without discarding the telemetry reading.
+    /// </summary>
+    /// <param name="reading">Telemetry reading being processed.</param>
+    /// <param name="observation">
+    /// Result of comparing the reading with the previously observed sequence.
+    /// </param>
+    private void RecordSequenceObservation(
+        TelemetryReading reading,
+        TelemetrySequenceObservation observation)
+    {
+        switch (observation.Status)
+        {
+            case TelemetrySequenceStatus.Gap:
+                _metrics.RecordMissingReadings(
+                    observation.MissingReadingCount);
+
+                _logger.LogWarning(
+                    "Telemetry sequence gap detected for {DeviceId}: " +
+                    "received {SequenceNumber} after " +
+                    "{PreviousSequenceNumber}; " +
+                    "{MissingReadingCount} readings are missing",
+                    reading.DeviceId,
+                    reading.SequenceNumber,
+                    observation.PreviousSequenceNumber,
+                    observation.MissingReadingCount);
+                break;
+
+            case TelemetrySequenceStatus.Duplicate:
+                _metrics.RecordDuplicateReading();
+
+                _logger.LogWarning(
+                    "Duplicate telemetry sequence {SequenceNumber} " +
+                    "received from {DeviceId}",
+                    reading.SequenceNumber,
+                    reading.DeviceId);
+                break;
+
+            case TelemetrySequenceStatus.OutOfOrder:
+                _metrics.RecordOutOfOrderReading();
+
+                _logger.LogWarning(
+                    "Out-of-order telemetry sequence {SequenceNumber} " +
+                    "received from {DeviceId} after " +
+                    "{PreviousSequenceNumber}",
+                    reading.SequenceNumber,
+                    reading.DeviceId,
+                    observation.PreviousSequenceNumber);
+                break;
+
+            case TelemetrySequenceStatus.Baseline:
+            case TelemetrySequenceStatus.InOrder:
+            default:
+                break;
         }
     }
 }
