@@ -9,7 +9,7 @@ namespace DrillingTelemetry.Processor.Persistence;
 /// Persists telemetry readings in PostgreSQL using their device and sequence
 /// as a durable idempotency key.
 /// </summary>
-internal sealed class PostgresTelemetryReadingStore
+internal sealed class IdempotentTelemetryReadingStore
     : ITelemetryReadingStore
 {
     private const string InsertReadingSql =
@@ -51,7 +51,7 @@ internal sealed class PostgresTelemetryReadingStore
     /// <param name="dataSource">
     /// Provides pooled PostgreSQL connections.
     /// </param>
-    public PostgresTelemetryReadingStore(
+    public IdempotentTelemetryReadingStore(
         NpgsqlDataSource dataSource)
     {
         ArgumentNullException.ThrowIfNull(dataSource);
@@ -60,7 +60,7 @@ internal sealed class PostgresTelemetryReadingStore
     }
 
     /// <inheritdoc />
-    public async Task<TelemetryReadingStoreResult> StoreAsync(
+    public async Task<TelemetryReadingStoreResult> SaveAsync(
         TelemetryReading reading,
         CancellationToken cancellationToken)
     {

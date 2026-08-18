@@ -1,5 +1,7 @@
 ﻿using DrillingTelemetry.Processor.Configuration;
 using DrillingTelemetry.Processor.Realtime;
+using DrillingTelemetry.Processor.Endpoints;
+using Scalar.AspNetCore;
 
 string? environmentName =
     Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ??
@@ -24,7 +26,19 @@ builder.Services.AddTelemetryProcessor(
 
 WebApplication app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseCors();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+
+    app.MapScalarApiReference(options =>
+        options.WithTitle(
+            "Drilling Telemetry Processor API"));
+}
+
+app.MapTelemetryReadingsEndpoints();
 
 app.MapHub<TelemetryHub>(
     TelemetryHub.RoutePattern);

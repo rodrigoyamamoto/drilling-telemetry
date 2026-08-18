@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:5154
+
+### Get devices with persisted telemetry
+GET {{baseUrl}}/api/telemetry/devices
+Accept: application/json
+
+### Get the latest readings for a device
+GET {{baseUrl}}/api/telemetry/readings/DRILL-001?limit=100
+Accept: application/json
+
+### Validate the maximum reading limit
+GET {{baseUrl}}/api/telemetry/readings/DRILL-001?limit=1001
+Accept: application/problem+json

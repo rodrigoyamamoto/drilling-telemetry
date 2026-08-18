@@ -70,7 +70,7 @@ internal sealed class TelemetryReadingProcessor
         ArgumentNullException.ThrowIfNull(reading);
 
         TelemetryReadingStoreResult storeResult =
-            await _telemetryReadingStore.StoreAsync(
+            await _telemetryReadingStore.SaveAsync(
                 reading,
                 cancellationToken);
 

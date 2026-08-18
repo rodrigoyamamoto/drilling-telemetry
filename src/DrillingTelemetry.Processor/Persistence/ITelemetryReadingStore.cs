@@ -16,7 +16,7 @@ internal interface ITelemetryReadingStore
     /// Signals that persistence should be cancelled.
     /// </param>
     /// <returns>The result of the idempotent storage operation.</returns>
-    Task<TelemetryReadingStoreResult> StoreAsync(
+    Task<TelemetryReadingStoreResult> SaveAsync(
         TelemetryReading reading,
         CancellationToken cancellationToken);
 }

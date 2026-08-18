@@ -36,6 +36,9 @@ internal static class ProcessorServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
+        services.AddProblemDetails();
+        services.AddOpenApi();
+
         string[] allowedOrigins = configuration
             .GetSection(AllowedOriginsSectionName)
             .Get<string[]>()
@@ -128,7 +131,11 @@ internal static class ProcessorServiceCollectionExtensions
 
         services.AddSingleton<
             ITelemetryReadingStore,
-            PostgresTelemetryReadingStore>();
+            IdempotentTelemetryReadingStore>();
+
+        services.AddSingleton<
+            ITelemetryHistoryReader,
+            TelemetryHistoryReader>();
 
         services.AddSingleton<
             ITelemetryReadingProcessor,

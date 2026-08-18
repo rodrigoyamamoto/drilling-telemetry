@@ -278,7 +278,7 @@ public sealed class TelemetryReadingProcessorTests
             string> _payloads = [];
 
         /// <inheritdoc />
-        public Task<TelemetryReadingStoreResult> StoreAsync(
+        public Task<TelemetryReadingStoreResult> SaveAsync(
             TelemetryReading reading,
             CancellationToken cancellationToken)
         {
