@@ -16,6 +16,12 @@ namespace DrillingTelemetry.Processor.Messaging;
 internal sealed class RabbitMqTelemetryReadingConsumer
     : BackgroundService
 {
+    private const string DeadLetterExchangeArgument =
+        "x-dead-letter-exchange";
+
+    private const string DeadLetterRoutingKeyArgument =
+        "x-dead-letter-routing-key";
+
     private readonly RabbitMqOptions _rabbitMqOptions;
     private readonly TimeProvider _timeProvider;
     private readonly TelemetryProcessingMetrics _metrics;
@@ -82,6 +88,10 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             await connectionFactory.CreateConnectionAsync(
                 stoppingToken);
 
+        await DeclareTopologyAsync(
+            connection,
+            stoppingToken);
+
         Task[] consumerTasks = Enumerable
             .Range(
                 start: 1,
@@ -94,6 +104,66 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             .ToArray();
 
         await Task.WhenAll(consumerTasks);
+    }
+
+    /// <summary>
+    /// Declares the telemetry queue and its dead-letter destination.
+    /// </summary>
+    /// <param name="connection">
+    /// RabbitMQ connection used to create a temporary topology channel.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Token used to cancel topology declaration.
+    /// </param>
+    private async Task DeclareTopologyAsync(
+        IConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await using IChannel channel =
+            await connection.CreateChannelAsync(
+                cancellationToken: cancellationToken);
+
+        await channel.ExchangeDeclareAsync(
+            exchange:
+                _rabbitMqOptions.TelemetryDeadLetterExchangeName,
+            type: ExchangeType.Direct,
+            durable: true,
+            autoDelete: false,
+            arguments: null,
+            cancellationToken: cancellationToken);
+
+        await channel.QueueDeclareAsync(
+            queue: _rabbitMqOptions.TelemetryDeadLetterQueueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null,
+            cancellationToken: cancellationToken);
+
+        await channel.QueueBindAsync(
+            queue: _rabbitMqOptions.TelemetryDeadLetterQueueName,
+            exchange:
+                _rabbitMqOptions.TelemetryDeadLetterExchangeName,
+            routingKey:
+                _rabbitMqOptions.TelemetryReadingsQueueName,
+            arguments: null,
+            cancellationToken: cancellationToken);
+
+        var queueArguments = new Dictionary<string, object?>
+        {
+            [DeadLetterExchangeArgument] =
+                _rabbitMqOptions.TelemetryDeadLetterExchangeName,
+            [DeadLetterRoutingKeyArgument] =
+                _rabbitMqOptions.TelemetryReadingsQueueName
+        };
+
+        await channel.QueueDeclareAsync(
+            queue: _rabbitMqOptions.TelemetryReadingsQueueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: queueArguments,
+            cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -116,14 +186,6 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         await using IChannel channel =
             await connection.CreateChannelAsync(
                 cancellationToken: stoppingToken);
-
-        await channel.QueueDeclareAsync(
-            queue: _rabbitMqOptions.TelemetryReadingsQueueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null,
-            cancellationToken: stoppingToken);
 
         await channel.BasicQosAsync(
             prefetchSize: 0,
@@ -254,10 +316,59 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 exception,
                 "Invalid telemetry message received");
 
-            await consumerChannel.BasicNackAsync(
-                deliveryTag: eventArgs.DeliveryTag,
+            await RejectDeliveryAsync(
+                consumerChannel,
+                eventArgs.DeliveryTag);
+        }
+        catch (OperationCanceledException)
+            when (eventArgs.CancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug(
+                "Telemetry delivery {DeliveryTag} was interrupted " +
+                "during consumer shutdown",
+                eventArgs.DeliveryTag);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Unexpected failure processing telemetry delivery " +
+                "{DeliveryTag}",
+                eventArgs.DeliveryTag);
+
+            await RejectDeliveryAsync(
+                consumerChannel,
+                eventArgs.DeliveryTag);
+        }
+    }
+
+    /// <summary>
+    /// Rejects a delivery without requeueing it and records channel failures.
+    /// </summary>
+    /// <param name="channel">
+    /// Channel on which the delivery was received.
+    /// </param>
+    /// <param name="deliveryTag">
+    /// RabbitMQ delivery identifier.
+    /// </param>
+    private async Task RejectDeliveryAsync(
+        IChannel channel,
+        ulong deliveryTag)
+    {
+        try
+        {
+            await channel.BasicNackAsync(
+                deliveryTag: deliveryTag,
                 multiple: false,
-                requeue: false);
+                requeue: false,
+                cancellationToken: CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to reject telemetry delivery {DeliveryTag}",
+                deliveryTag);
         }
     }
 

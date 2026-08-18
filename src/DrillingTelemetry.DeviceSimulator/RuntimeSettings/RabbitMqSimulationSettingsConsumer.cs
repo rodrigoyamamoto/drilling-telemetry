@@ -151,10 +151,52 @@ internal sealed class RabbitMqSimulationSettingsConsumer
                 "Simulation settings command rejected: {Reason}",
                 exception.Message);
 
-            await consumerChannel.BasicNackAsync(
-                deliveryTag: eventArgs.DeliveryTag,
+            await RejectDeliveryAsync(
+                consumerChannel,
+                eventArgs.DeliveryTag);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Unexpected failure processing simulation settings " +
+                "delivery {DeliveryTag}",
+                eventArgs.DeliveryTag);
+
+            await RejectDeliveryAsync(
+                consumerChannel,
+                eventArgs.DeliveryTag);
+        }
+    }
+
+    /// <summary>
+    /// Rejects a delivery without requeueing it and records channel failures.
+    /// </summary>
+    /// <param name="channel">
+    /// Channel on which the delivery was received.
+    /// </param>
+    /// <param name="deliveryTag">
+    /// RabbitMQ delivery identifier.
+    /// </param>
+    private async Task RejectDeliveryAsync(
+        IChannel channel,
+        ulong deliveryTag)
+    {
+        try
+        {
+            await channel.BasicNackAsync(
+                deliveryTag: deliveryTag,
                 multiple: false,
-                requeue: false);
+                requeue: false,
+                cancellationToken: CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to reject simulation settings delivery " +
+                "{DeliveryTag}",
+                deliveryTag);
         }
     }
 }

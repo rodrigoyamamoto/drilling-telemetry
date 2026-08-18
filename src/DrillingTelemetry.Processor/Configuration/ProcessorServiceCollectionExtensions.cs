@@ -52,6 +52,16 @@ internal static class ProcessorServiceCollectionExtensions
                 "RabbitMQ telemetry readings queue name is missing.")
             .Validate(
                 options =>
+                    !string.IsNullOrWhiteSpace(
+                        options.TelemetryDeadLetterExchangeName),
+                "RabbitMQ telemetry dead-letter exchange name is missing.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(
+                        options.TelemetryDeadLetterQueueName),
+                "RabbitMQ telemetry dead-letter queue name is missing.")
+            .Validate(
+                options =>
                     options.TelemetryPrefetchCount > 0,
                 "RabbitMQ telemetry prefetch count must be greater than zero.")
             .Validate(

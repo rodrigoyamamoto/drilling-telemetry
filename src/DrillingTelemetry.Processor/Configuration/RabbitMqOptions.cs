@@ -22,6 +22,18 @@ internal sealed class RabbitMqOptions
         string.Empty;
 
     /// <summary>
+    /// Gets or sets the exchange that receives rejected telemetry readings.
+    /// </summary>
+    public string TelemetryDeadLetterExchangeName { get; set; } =
+        string.Empty;
+
+    /// <summary>
+    /// Gets or sets the queue that stores rejected telemetry readings.
+    /// </summary>
+    public string TelemetryDeadLetterQueueName { get; set; } =
+        string.Empty;
+
+    /// <summary>
     /// Gets or sets the maximum number of unacknowledged telemetry readings per consumer.
     /// </summary>
     public ushort TelemetryPrefetchCount { get; set; }

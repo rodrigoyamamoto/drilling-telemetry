@@ -100,14 +100,6 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
             await connection.CreateChannelAsync(
                 cancellationToken: stoppingToken);
 
-        await telemetryChannel.QueueDeclareAsync(
-            queue: _rabbitMqOptions.TelemetryReadingsQueueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null,
-            cancellationToken: stoppingToken);
-
         var readingPublisher =
             new RabbitMqTelemetryReadingPublisher(
                 telemetryChannel,
