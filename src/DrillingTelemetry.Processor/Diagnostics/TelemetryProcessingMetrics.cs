@@ -15,10 +15,11 @@ internal sealed class TelemetryProcessingMetrics
 
     private readonly Counter<long> _readingsProcessed;
     private readonly Counter<long> _invalidMessages;
-    private readonly Counter<long> _missingReadings;
+    private readonly Counter<long> _sequenceGaps;
     private readonly Counter<long> _duplicateReadings;
     private readonly Counter<long> _outOfOrderReadings;
     private readonly Histogram<double> _endToEndDuration;
+    private readonly Histogram<long> _sequenceGapSize;
 
     /// <summary>
     /// Initialises the telemetry processing metrics.
@@ -45,11 +46,17 @@ internal sealed class TelemetryProcessingMetrics
             description:
                 "Number of invalid telemetry messages received.");
 
-        _missingReadings = meter.CreateCounter<long>(
-            name: "drilling.telemetry.readings.missing",
-            unit: "{reading}",
+        _sequenceGaps = meter.CreateCounter<long>(
+            name: "drilling.telemetry.sequence.gaps",
+            unit: "{gap}",
             description:
-                "Number of telemetry readings missing from sequences.");
+                "Number of telemetry sequence gaps observed.");
+
+        _sequenceGapSize = meter.CreateHistogram<long>(
+            name: "drilling.telemetry.sequence.gap.size",
+            unit: "{sequence_number}",
+            description:
+                "Number of sequence positions skipped by an observed gap.");
 
         _duplicateReadings = meter.CreateCounter<long>(
             name: "drilling.telemetry.readings.duplicate",
@@ -97,14 +104,15 @@ internal sealed class TelemetryProcessingMetrics
     }
 
     /// <summary>
-    /// Records telemetry readings missing from a device sequence.
+    /// Records an observed gap in a device sequence.
     /// </summary>
-    /// <param name="missingReadingCount">
-    /// Number of readings missing from the observed sequence.
+    /// <param name="gapSize">
+    /// Number of sequence positions skipped by the observed gap.
     /// </param>
-    public void RecordMissingReadings(long missingReadingCount)
+    public void RecordSequenceGap(long gapSize)
     {
-        _missingReadings.Add(missingReadingCount);
+        _sequenceGaps.Add(1);
+        _sequenceGapSize.Record(gapSize);
     }
 
     /// <summary>

@@ -44,7 +44,7 @@ internal sealed class TelemetrySequenceTracker
                     return new TelemetrySequenceObservation(
                         TelemetrySequenceStatus.Baseline,
                         PreviousSequenceNumber: 0,
-                        MissingReadingCount: 0);
+                        GapSize: 0);
                 }
 
                 continue;
@@ -60,7 +60,7 @@ internal sealed class TelemetrySequenceTracker
                 return new TelemetrySequenceObservation(
                     status,
                     previousSequenceNumber,
-                    MissingReadingCount: 0);
+                    GapSize: 0);
             }
 
             if (!_lastSequenceNumbers.TryUpdate(
@@ -71,18 +71,18 @@ internal sealed class TelemetrySequenceTracker
                 continue;
             }
 
-            long missingReadingCount =
+            long gapSize =
                 sequenceNumber - previousSequenceNumber - 1;
 
             TelemetrySequenceStatus updatedStatus =
-                missingReadingCount == 0
+                gapSize == 0
                     ? TelemetrySequenceStatus.InOrder
                     : TelemetrySequenceStatus.Gap;
 
             return new TelemetrySequenceObservation(
                 updatedStatus,
                 previousSequenceNumber,
-                missingReadingCount);
+                gapSize);
         }
     }
 }
@@ -94,13 +94,14 @@ internal sealed class TelemetrySequenceTracker
 /// <param name="PreviousSequenceNumber">
 /// Last sequence number previously observed for the device.
 /// </param>
-/// <param name="MissingReadingCount">
-/// Number of readings missing between the previous and current sequences.
+/// <param name="GapSize">
+/// Number of sequence positions skipped between the previous and current
+/// sequences.
 /// </param>
 internal readonly record struct TelemetrySequenceObservation(
     TelemetrySequenceStatus Status,
     long PreviousSequenceNumber,
-    long MissingReadingCount);
+    long GapSize);
 
 /// <summary>
 /// Identifies how a telemetry sequence relates to the previously observed

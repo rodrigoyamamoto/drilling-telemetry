@@ -275,18 +275,18 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         switch (observation.Status)
         {
             case TelemetrySequenceStatus.Gap:
-                _metrics.RecordMissingReadings(
-                    observation.MissingReadingCount);
+                _metrics.RecordSequenceGap(
+                    observation.GapSize);
 
                 _logger.LogWarning(
                     "Telemetry sequence gap detected for {DeviceId}: " +
                     "received {SequenceNumber} after " +
                     "{PreviousSequenceNumber}; " +
-                    "{MissingReadingCount} readings are missing",
+                    "{GapSize} sequence numbers were skipped",
                     reading.DeviceId,
                     reading.SequenceNumber,
                     observation.PreviousSequenceNumber,
-                    observation.MissingReadingCount);
+                    observation.GapSize);
                 break;
 
             case TelemetrySequenceStatus.Duplicate:
