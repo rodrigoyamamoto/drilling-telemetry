@@ -16,7 +16,7 @@ internal sealed class RabbitMqOptions
     public string HostName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the simulation settings command queue name.
+    /// Gets or sets the simulation settings exchange name.
     /// </summary>
-    public string SimulationSettingsQueueName { get; set; } = string.Empty;
+    public string SimulationSettingsExchangeName { get; set; } = string.Empty;
 }

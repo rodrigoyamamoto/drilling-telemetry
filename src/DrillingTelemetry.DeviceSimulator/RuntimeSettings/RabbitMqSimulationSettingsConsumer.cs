@@ -11,7 +11,7 @@ namespace DrillingTelemetry.DeviceSimulator.RuntimeSettings;
 internal sealed class RabbitMqSimulationSettingsConsumer
 {
     private readonly IChannel _channel;
-    private readonly string _queueName;
+    private readonly string _exchangeName;
     private readonly SimulationSettingsCommandApplier _commandApplier;
     private readonly ILogger<RabbitMqSimulationSettingsConsumer> _logger;
 
@@ -21,28 +21,28 @@ internal sealed class RabbitMqSimulationSettingsConsumer
     /// <param name="channel">
     /// RabbitMQ channel used to consume and acknowledge commands.
     /// </param>
-    /// <param name="queueName">
-    /// Queue from which settings commands are consumed.
+    /// <param name="exchangeName">
+    /// Exchange from which settings commands are received.
     /// </param>
     /// <param name="commandApplier">
     /// Applies received settings commands.
     /// </param>
-    /// /// <param name="logger">
+    /// <param name="logger">
     /// Records settings processing information.
     /// </param>
     public RabbitMqSimulationSettingsConsumer(
         IChannel channel,
-        string queueName,
+        string exchangeName,
         SimulationSettingsCommandApplier commandApplier,
         ILogger<RabbitMqSimulationSettingsConsumer> logger)
     {
         ArgumentNullException.ThrowIfNull(channel);
-        ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(exchangeName);
         ArgumentNullException.ThrowIfNull(commandApplier);
         ArgumentNullException.ThrowIfNull(logger);
 
         _channel = channel;
-        _queueName = queueName;
+        _exchangeName = exchangeName;
         _commandApplier = commandApplier;
         _logger = logger;
     }
@@ -59,11 +59,26 @@ internal sealed class RabbitMqSimulationSettingsConsumer
     public async Task<string> StartAsync(
         CancellationToken cancellationToken)
     {
-        await _channel.QueueDeclareAsync(
-            queue: _queueName,
+        await _channel.ExchangeDeclareAsync(
+            exchange: _exchangeName,
+            type: ExchangeType.Fanout,
             durable: true,
-            exclusive: false,
             autoDelete: false,
+            arguments: null,
+            cancellationToken: cancellationToken);
+
+        QueueDeclareOk queue = await _channel.QueueDeclareAsync(
+            queue: string.Empty,
+            durable: false,
+            exclusive: true,
+            autoDelete: true,
+            arguments: null,
+            cancellationToken: cancellationToken);
+
+        await _channel.QueueBindAsync(
+            queue: queue.QueueName,
+            exchange: _exchangeName,
+            routingKey: string.Empty,
             arguments: null,
             cancellationToken: cancellationToken);
 
@@ -78,7 +93,7 @@ internal sealed class RabbitMqSimulationSettingsConsumer
         consumer.ReceivedAsync += HandleReceivedAsync;
 
         string consumerTag = await _channel.BasicConsumeAsync(
-            queue: _queueName,
+            queue: queue.QueueName,
             autoAck: false,
             consumer: consumer,
             cancellationToken: cancellationToken);

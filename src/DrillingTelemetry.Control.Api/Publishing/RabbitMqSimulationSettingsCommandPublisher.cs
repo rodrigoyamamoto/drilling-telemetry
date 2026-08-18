@@ -66,10 +66,11 @@ internal sealed class RabbitMqSimulationSettingsCommandPublisher
                 options: channelOptions,
                 cancellationToken: cancellationToken);
 
-        await _channel.QueueDeclareAsync(
-            queue: _rabbitMqOptions.SimulationSettingsQueueName,
+        await _channel.ExchangeDeclareAsync(
+            exchange:
+                _rabbitMqOptions.SimulationSettingsExchangeName,
+            type: ExchangeType.Fanout,
             durable: true,
-            exclusive: false,
             autoDelete: false,
             arguments: null,
             cancellationToken: cancellationToken);
@@ -101,9 +102,9 @@ internal sealed class RabbitMqSimulationSettingsCommandPublisher
                     "The RabbitMQ publisher has not started.");
 
             await channel.BasicPublishAsync(
-                exchange: string.Empty,
-                routingKey:
-                    _rabbitMqOptions.SimulationSettingsQueueName,
+                exchange:
+                    _rabbitMqOptions.SimulationSettingsExchangeName,
+                routingKey: string.Empty,
                 mandatory: true,
                 basicProperties: _properties,
                 body: body,

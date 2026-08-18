@@ -43,8 +43,8 @@ internal static class DeviceSimulatorServiceCollectionExtensions
             .Validate(
                 options =>
                     !string.IsNullOrWhiteSpace(
-                        options.SimulationSettingsQueueName),
-                "RabbitMQ simulation settings queue name is missing.")
+                        options.SimulationSettingsExchangeName),
+                "RabbitMQ simulation settings exchange name is missing.")
             .ValidateOnStart();
 
         services

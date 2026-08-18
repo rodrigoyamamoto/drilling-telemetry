@@ -120,7 +120,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         var settingsConsumer =
             new RabbitMqSimulationSettingsConsumer(
                 settingsChannel,
-                _rabbitMqOptions.SimulationSettingsQueueName,
+                _rabbitMqOptions.SimulationSettingsExchangeName,
                 _settingsCommandApplier,
                 _loggerFactory.CreateLogger<
                     RabbitMqSimulationSettingsConsumer>());
@@ -136,8 +136,8 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
 
         _logger.LogInformation(
             "Telemetry simulation started and is listening for " +
-            "settings from {QueueName}",
-            _rabbitMqOptions.SimulationSettingsQueueName);
+            "settings through {ExchangeName}",
+            _rabbitMqOptions.SimulationSettingsExchangeName);
 
         try
         {
