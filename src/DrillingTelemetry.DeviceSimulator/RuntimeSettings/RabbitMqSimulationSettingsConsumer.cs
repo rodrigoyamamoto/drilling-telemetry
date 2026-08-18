@@ -130,11 +130,21 @@ internal sealed class RabbitMqSimulationSettingsConsumer
                     "The settings command is empty.");
             }
 
-            _commandApplier.Apply(command);
+            bool applied = _commandApplier.TryApply(command);
 
             await consumerChannel.BasicAckAsync(
                 deliveryTag: eventArgs.DeliveryTag,
                 multiple: false);
+
+            if (!applied)
+            {
+                _logger.LogDebug(
+                    "Obsolete simulation settings revision " +
+                    "{Revision} ignored",
+                    command.Revision);
+
+                return;
+            }
 
             _logger.LogInformation(
                 "Simulation settings revision {Revision} applied: " +

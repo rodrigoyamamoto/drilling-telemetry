@@ -3,6 +3,10 @@ namespace DrillingTelemetry.Control.Api.RuntimeSettings;
 /// <summary>
 /// Provides process-local revisions for simulation settings updates.
 /// </summary>
+/// <remarks>
+/// This implementation requires a single Control API instance. Replace it
+/// with a globally ordered revision source before scaling the API.
+/// </remarks>
 internal sealed class InMemorySimulationSettingsRevisionProvider
     : ISimulationSettingsRevisionProvider
 {

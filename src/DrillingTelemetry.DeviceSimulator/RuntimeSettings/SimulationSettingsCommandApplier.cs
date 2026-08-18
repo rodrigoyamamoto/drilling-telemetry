@@ -24,12 +24,16 @@ internal sealed class SimulationSettingsCommandApplier
     }
 
     /// <summary>
-    /// Applies a settings update command.
+    /// Attempts to apply a settings update command.
     /// </summary>
     /// <param name="command">
     /// Command containing the new runtime settings.
     /// </param>
-    public void Apply(UpdateSimulationSettingsCommand command)
+    /// <returns>
+    /// <see langword="true"/> when the command updated the settings;
+    /// otherwise, <see langword="false"/> when its revision was obsolete.
+    /// </returns>
+    public bool TryApply(UpdateSimulationSettingsCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
@@ -39,6 +43,6 @@ internal sealed class SimulationSettingsCommandApplier
             TimeSpan.FromMilliseconds(
                 command.PublishingIntervalMilliseconds));
 
-        _settingsState.Update(settings);
+        return _settingsState.TryUpdate(settings);
     }
 }

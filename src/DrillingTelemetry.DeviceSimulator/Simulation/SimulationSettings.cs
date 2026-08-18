@@ -1,3 +1,5 @@
+using DrillingTelemetry.Contracts;
+
 namespace DrillingTelemetry.DeviceSimulator.Simulation;
 
 /// <summary>
@@ -46,12 +48,19 @@ internal sealed class SimulationSettings
                 nameof(deviceIds));
         }
 
-        if (publishingInterval <= TimeSpan.Zero)
+        TimeSpan minimumPublishingInterval =
+            TimeSpan.FromMilliseconds(
+                SimulationLimits
+                    .MinimumPublishingIntervalMilliseconds);
+
+        if (publishingInterval < minimumPublishingInterval)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(publishingInterval),
                 publishingInterval,
-                "The publishing interval must be greater than zero.");
+                "The publishing interval must be at least " +
+                $"{SimulationLimits.MinimumPublishingIntervalMilliseconds} " +
+                "milliseconds.");
         }
 
         Revision = revision;

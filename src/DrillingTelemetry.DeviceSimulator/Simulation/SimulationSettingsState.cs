@@ -38,12 +38,16 @@ internal sealed class SimulationSettingsState
     }
 
     /// <summary>
-    /// Replaces the current settings with a newer revision.
+    /// Attempts to replace the current settings with a newer revision.
     /// </summary>
     /// <param name="settings">
     /// New settings snapshot.
     /// </param>
-    public void Update(SimulationSettings settings)
+    /// <returns>
+    /// <see langword="true"/> when the settings were updated;
+    /// otherwise, <see langword="false"/> when the revision was obsolete.
+    /// </returns>
+    public bool TryUpdate(SimulationSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -53,10 +57,7 @@ internal sealed class SimulationSettingsState
         {
             if (settings.Revision <= _current.Revision)
             {
-                throw new ArgumentOutOfRangeException(
-                    nameof(settings),
-                    settings.Revision,
-                    "The settings revision must be newer than the current revision.");
+                return false;
             }
 
             _current = settings;
@@ -66,6 +67,8 @@ internal sealed class SimulationSettingsState
         }
 
         settingsChanged.SetResult();
+
+        return true;
     }
 
     /// <summary>

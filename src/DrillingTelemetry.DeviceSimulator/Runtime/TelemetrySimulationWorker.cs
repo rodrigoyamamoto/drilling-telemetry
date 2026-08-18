@@ -92,8 +92,13 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
             await connectionFactory.CreateConnectionAsync(
                 stoppingToken);
 
+        var telemetryChannelOptions = new CreateChannelOptions(
+            publisherConfirmationsEnabled: true,
+            publisherConfirmationTrackingEnabled: true);
+
         await using IChannel telemetryChannel =
             await connection.CreateChannelAsync(
+                options: telemetryChannelOptions,
                 cancellationToken: stoppingToken);
 
         await using IChannel settingsChannel =

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DrillingTelemetry.Contracts;
 
 namespace DrillingTelemetry.Control.Api.Requests;
 
@@ -17,7 +18,11 @@ public sealed record UpdateSimulationSettingsRequest : IValidatableObject
     /// <summary>
     /// Gets the interval between publishing cycles, in milliseconds.
     /// </summary>
-    [Range(1, int.MaxValue, ErrorMessage = "Publishing interval must be greater than zero.")]
+    [Range(
+        SimulationLimits.MinimumPublishingIntervalMilliseconds,
+        int.MaxValue,
+        ErrorMessage =
+            "Publishing interval must be at least 50 milliseconds.")]
     public int PublishingIntervalMilliseconds { get; init; }
 
     /// <summary>

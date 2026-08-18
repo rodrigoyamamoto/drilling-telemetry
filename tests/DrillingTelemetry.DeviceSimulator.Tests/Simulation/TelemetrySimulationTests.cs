@@ -149,6 +149,8 @@ public sealed class TelemetrySimulationTests
         Task simulationTask = simulation.RunAsync(cancellationTokenSource.Token);
 
         // Assert
+        await readingPublisher.WaitUntilCountAsync(deviceIds.Length);
+
         Assert.Equal(
             deviceIds,
             readingPublisher.PublishedReadings
@@ -265,12 +267,15 @@ public sealed class TelemetrySimulationTests
             cancellationTokenSource.Token);
 
         // Assert
+        await readingPublisher.WaitUntilCountAsync(
+            initialDeviceIds.Length);
+
         Assert.Equal(
             initialDeviceIds,
             readingPublisher.PublishedReadings
                 .Select(reading => reading.DeviceId));
 
-        settingsState.Update(updatedSettings);
+        Assert.True(settingsState.TryUpdate(updatedSettings));
 
         await readingPublisher.WaitUntilCountAsync(
             expectedAfterUpdate.Length);

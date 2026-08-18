@@ -9,6 +9,10 @@ namespace DrillingTelemetry.DeviceSimulator.Publishing;
 /// <summary>
 /// Publishes telemetry readings to a RabbitMQ queue.
 /// </summary>
+/// <remarks>
+/// The simulation loop is the channel's single publisher. Calls to
+/// <see cref="PublishAsync"/> must not overlap.
+/// </remarks>
 internal sealed class RabbitMqTelemetryReadingPublisher
     : ITelemetryReadingPublisher
 {

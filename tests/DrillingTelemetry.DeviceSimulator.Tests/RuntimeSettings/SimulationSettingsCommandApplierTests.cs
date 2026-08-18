@@ -13,7 +13,7 @@ public sealed class SimulationSettingsCommandApplierTests
     /// Verifies that a valid command updates the current simulation settings.
     /// </summary>
     [Fact]
-    public void Apply_ValidCommand_UpdatesSimulationSettings()
+    public void TryApply_ValidCommand_UpdatesSimulationSettings()
     {
         // Arrange
         string[] initialDeviceIds =
@@ -47,9 +47,11 @@ public sealed class SimulationSettingsCommandApplierTests
         };
 
         // Act
-        applier.Apply(command);
+        bool applied = applier.TryApply(command);
 
         // Assert
+        Assert.True(applied);
+
         SimulationSettings currentSettings =
             settingsState.Current;
 

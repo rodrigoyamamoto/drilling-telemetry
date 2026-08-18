@@ -3,6 +3,7 @@ using DrillingTelemetry.DeviceSimulator.Diagnostics;
 using DrillingTelemetry.DeviceSimulator.Runtime;
 using DrillingTelemetry.DeviceSimulator.RuntimeSettings;
 using DrillingTelemetry.DeviceSimulator.Simulation;
+using DrillingTelemetry.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace DrillingTelemetry.DeviceSimulator.Configuration;
@@ -58,8 +59,10 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                 "At least one valid device must be configured.")
             .Validate(
                 options =>
-                    options.PublishingIntervalMilliseconds > 0,
-                "Publishing interval must be greater than zero.")
+                    options.PublishingIntervalMilliseconds >=
+                    SimulationLimits
+                        .MinimumPublishingIntervalMilliseconds,
+                "Publishing interval must be at least 50 milliseconds.")
             .Validate(
                 options =>
                     Enum.IsDefined(options.GenerationMode),
