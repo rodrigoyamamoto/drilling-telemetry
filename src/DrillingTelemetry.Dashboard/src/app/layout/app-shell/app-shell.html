@@ -1,0 +1,31 @@
+<div class="app-shell">
+  <aside class="side-rail" aria-label="Primary navigation">
+    <a class="brand-mark" href="#" aria-label="Drilling Telemetry home">
+      <span>DT</span>
+    </a>
+
+    <nav class="side-rail__navigation" aria-label="Dashboard sections">
+      <a class="rail-link rail-link--active" href="#overview" aria-current="page">
+        <span class="rail-link__icon" aria-hidden="true">OV</span>
+        <span class="rail-link__label">Overview</span>
+      </a>
+      <a class="rail-link" href="#devices">
+        <span class="rail-link__icon" aria-hidden="true">DV</span>
+        <span class="rail-link__label">Devices</span>
+      </a>
+      <a class="rail-link" href="#events">
+        <span class="rail-link__icon" aria-hidden="true">EV</span>
+        <span class="rail-link__label">Events</span>
+      </a>
+    </nav>
+
+    <div class="rail-status" title="All services operational">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="rail-status__label">Healthy</span>
+    </div>
+  </aside>
+
+  <main class="dashboard-shell">
+    <router-outlet />
+  </main>
+</div>

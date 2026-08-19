@@ -1,0 +1,123 @@
+<div id="overview">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Real-time operations</p>
+      <h1>Drilling telemetry</h1>
+    </div>
+
+    <div class="topbar__status">
+      <span class="environment-badge">North Sea · Demo rig</span>
+      <span class="live-badge">
+        <span class="live-badge__pulse" aria-hidden="true"></span>
+        Live
+      </span>
+      <span class="last-update">Updated 2 sec ago</span>
+    </div>
+  </header>
+
+  <section class="asset-context" aria-label="Current drilling context">
+    <div class="asset-context__identity">
+      <span class="asset-monogram" aria-hidden="true">A7</span>
+      <div>
+        <span class="field-label">Active well</span>
+        <strong>Archer A-07</strong>
+      </div>
+    </div>
+
+    <dl class="context-details">
+      <div><dt>Wellbore</dt><dd>A-07 Main</dd></div>
+      <div><dt>Operation</dt><dd>Drilling ahead</dd></div>
+      <div><dt>Measured depth</dt><dd>2,847.6 m</dd></div>
+      <div><dt>Acquisition</dt><dd>Real-time</dd></div>
+    </dl>
+
+    <button class="secondary-button" type="button">Change well</button>
+  </section>
+
+  <section class="metric-grid" aria-label="Latest telemetry values">
+    <article class="metric-card metric-card--pressure">
+      <div class="metric-card__header">
+        <span>Standpipe pressure</span>
+        <span class="trend trend--stable">Stable</span>
+      </div>
+      <div class="metric-value"><strong>8,247</strong><span>psi</span></div>
+      <div class="metric-card__footer">
+        <span class="metric-spark metric-spark--pressure" aria-hidden="true"></span>
+        <span>+1.8% in 5 min</span>
+      </div>
+    </article>
+
+    <article class="metric-card metric-card--temperature">
+      <div class="metric-card__header">
+        <span>Downhole temperature</span>
+        <span class="trend trend--stable">Normal</span>
+      </div>
+      <div class="metric-value"><strong>117.8</strong><span>°C</span></div>
+      <div class="metric-card__footer">
+        <span class="metric-spark metric-spark--temperature" aria-hidden="true"></span>
+        <span>+0.6 °C in 5 min</span>
+      </div>
+    </article>
+
+    <article class="metric-card">
+      <div class="metric-card__header">
+        <span>Data throughput</span>
+        <span class="trend trend--positive">Live</span>
+      </div>
+      <div class="metric-value"><strong>12.1</strong><span>msg/s</span></div>
+      <div class="metric-card__footer">
+        <span class="metric-spark metric-spark--throughput" aria-hidden="true"></span>
+        <span>4 active consumers</span>
+      </div>
+    </article>
+
+    <article class="metric-card">
+      <div class="metric-card__header">
+        <span>End-to-end latency</span>
+        <span class="trend trend--positive">Healthy</span>
+      </div>
+      <div class="metric-value"><strong>84</strong><span>ms</span></div>
+      <div class="metric-card__footer">
+        <span class="metric-spark metric-spark--latency" aria-hidden="true"></span>
+        <span>P95 · 126 ms</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="main-grid">
+    <app-telemetry-chart />
+    <app-device-list />
+  </section>
+
+  <section class="lower-grid">
+    <article class="panel events-panel" id="events">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Operational awareness</p>
+          <h2>Recent events</h2>
+        </div>
+        <button class="text-button" type="button">View all</button>
+      </div>
+
+      <ol class="event-list">
+        <li>
+          <span class="event-icon event-icon--info" aria-hidden="true">i</span>
+          <div><strong>Publishing interval updated</strong><small>2,000 ms → 500 ms</small></div>
+          <time datetime="2026-08-19T15:45:12Z">15:45:12</time>
+        </li>
+        <li>
+          <span class="event-icon event-icon--success" aria-hidden="true">✓</span>
+          <div><strong>DRILL-003 reconnected</strong><small>Stream resumed without a sequence gap</small></div>
+          <time datetime="2026-08-19T15:43:48Z">15:43:48</time>
+        </li>
+        <li>
+          <span class="event-icon event-icon--warning" aria-hidden="true">!</span>
+          <div><strong>Out-of-order reading detected</strong><small>DRILL-002 · sequence 18,426</small></div>
+          <time datetime="2026-08-19T15:41:07Z">15:41:07</time>
+        </li>
+      </ol>
+    </article>
+
+    <app-simulation-control />
+  </section>
+</div>

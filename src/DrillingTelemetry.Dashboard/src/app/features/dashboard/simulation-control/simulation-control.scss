@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.control-footer,
+.range-field > span {
+  display: flex;
+  align-items: center;
+}
+
+.mode-badge {
+  padding: 0.38rem 0.58rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.range-field {
+  display: block;
+  margin-top: 1.25rem;
+}
+
+.range-field > span {
+  justify-content: space-between;
+}
+
+.range-field > span strong {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.range-field output {
+  color: var(--cyan);
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-field input {
+  width: 100%;
+  margin: 1.1rem 0 0.4rem;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.range-scale small {
+  color: var(--subtle);
+  font-size: 0.56rem;
+}
+
+.control-footer {
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.1rem -1.15rem -1.15rem;
+  padding: 0.9rem 1.15rem;
+  border-top: 1px solid var(--border);
+}
+
+.control-footer > span {
+  color: var(--subtle);
+  font-size: 0.61rem;
+}
+
+.primary-button {
+  flex: 0 0 auto;
+  padding: 0.65rem 0.85rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: var(--cyan);
+  color: #041315;
+  font-size: 0.66rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.primary-button:hover {
+  background: #5de2dc;
+  box-shadow: 0 0.5rem 1.5rem rgba(50, 214, 208, 0.16);
+}
+
+@media (max-width: 48rem) {
+  .control-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .primary-button {
+    width: 100%;
+  }
+}

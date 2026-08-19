@@ -1,0 +1,20 @@
+<article class="panel">
+  <div class="panel-header">
+    <div>
+      <p class="section-kicker">Simulation control</p>
+      <h2>Acquisition rate</h2>
+    </div>
+    <span class="mode-badge">Random mode</span>
+  </div>
+
+  <label class="range-field" for="publishing-interval">
+    <span><strong>Publishing interval</strong><output for="publishing-interval">500 ms</output></span>
+    <input id="publishing-interval" type="range" min="100" max="5000" value="500" />
+    <span class="range-scale"><small>100 ms</small><small>5 sec</small></span>
+  </label>
+
+  <div class="control-footer">
+    <span>Changes apply without restarting the simulator.</span>
+    <button class="primary-button" type="button">Apply changes</button>
+  </div>
+</article>

@@ -1,11 +1,13 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+
+import { AppShell } from './layout/app-shell/app-shell';
 
 /** Hosts the drilling telemetry dashboard. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [AppShell],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App {}

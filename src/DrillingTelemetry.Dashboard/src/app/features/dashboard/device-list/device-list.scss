@@ -1,0 +1,148 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.device-row,
+.stream-summary__header {
+  display: flex;
+  align-items: center;
+}
+
+.panel-count {
+  padding: 0.38rem 0.58rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.device-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.15rem;
+}
+
+.device-row {
+  width: 100%;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.018);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.device-row:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.device-row--selected {
+  border-color: rgba(50, 214, 208, 0.24);
+  background: var(--cyan-soft);
+}
+
+.device-row__state {
+  display: grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: rgba(107, 221, 155, 0.08);
+}
+
+.device-row__state i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0.6rem rgba(107, 221, 155, 0.45);
+}
+
+.device-row__identity {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+.device-row__identity strong,
+.device-row__reading strong {
+  font-size: 0.72rem;
+}
+
+.device-row small,
+.stream-summary dt {
+  color: var(--subtle);
+  font-size: 0.6rem;
+}
+
+.device-row__reading {
+  display: grid;
+  justify-items: end;
+  gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stream-summary {
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+}
+
+.stream-summary__header {
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.67rem;
+}
+
+.stream-summary__header strong {
+  color: var(--green);
+  font-size: 0.65rem;
+}
+
+.quality-bar {
+  height: 0.3rem;
+  margin: 0.65rem 0 1rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.quality-bar span {
+  display: block;
+  width: 99.98%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2aa8a3, var(--green));
+}
+
+.stream-summary dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.stream-summary dl div {
+  padding: 0.65rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.stream-summary dt {
+  margin-bottom: 0.25rem;
+}
+
+.stream-summary dd {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
