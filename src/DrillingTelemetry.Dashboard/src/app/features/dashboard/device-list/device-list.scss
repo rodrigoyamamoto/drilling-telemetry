@@ -55,15 +55,14 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 0.5rem;
-  background: rgba(107, 221, 155, 0.08);
+  background: rgba(143, 163, 181, 0.08);
 }
 
 .device-row__state i {
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 0.6rem rgba(107, 221, 155, 0.45);
+  background: var(--muted);
 }
 
 .device-row__identity {

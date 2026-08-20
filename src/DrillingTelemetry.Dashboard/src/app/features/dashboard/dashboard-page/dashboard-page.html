@@ -7,11 +7,17 @@
 
     <div class="topbar__status">
       <span class="environment-badge">North Sea · Demo rig</span>
-      <span class="live-badge">
-        <span class="live-badge__pulse" aria-hidden="true"></span>
-        Live
+      <span class="history-badge">
+        <span class="history-badge__marker" aria-hidden="true"></span>
+        Historical
       </span>
-      <span class="last-update">Updated 2 sec ago</span>
+      @if (latestReading(); as reading) {
+        <span class="last-update">
+          Latest sample {{ reading.timestampUtc | date: 'HH:mm:ss' : 'UTC' }} UTC
+        </span>
+      } @else {
+        <span class="last-update">{{ readingStatusLabel() }}</span>
+      }
     </div>
   </header>
 
@@ -38,54 +44,79 @@
     <article class="metric-card metric-card--pressure">
       <div class="metric-card__header">
         <span>Standpipe pressure</span>
-        <span class="trend trend--stable">Stable</span>
+        <span class="trend trend--neutral">{{ readingStatusLabel() }}</span>
       </div>
-      <div class="metric-value"><strong>8,247</strong><span>psi</span></div>
+      <div class="metric-value">
+        @if (latestReading(); as reading) {
+          <strong>{{ reading.pressurePsi | number: '1.0-1' }}</strong><span>psi</span>
+        } @else {
+          <strong>—</strong><span>psi</span>
+        }
+      </div>
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--pressure" aria-hidden="true"></span>
-        <span>+1.8% in 5 min</span>
+        @if (latestReading(); as reading) {
+          <span>{{ reading.deviceId }} · sequence {{ reading.sequenceNumber | number: '1.0-0' }}</span>
+        } @else {
+          <span>{{ readingState().errorMessage ?? 'Waiting for persisted telemetry' }}</span>
+        }
       </div>
     </article>
 
     <article class="metric-card metric-card--temperature">
       <div class="metric-card__header">
         <span>Downhole temperature</span>
-        <span class="trend trend--stable">Normal</span>
+        <span class="trend trend--neutral">{{ readingStatusLabel() }}</span>
       </div>
-      <div class="metric-value"><strong>117.8</strong><span>°C</span></div>
+      <div class="metric-value">
+        @if (latestReading(); as reading) {
+          <strong>{{ reading.temperatureCelsius | number: '1.0-1' }}</strong><span>°C</span>
+        } @else {
+          <strong>—</strong><span>°C</span>
+        }
+      </div>
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--temperature" aria-hidden="true"></span>
-        <span>+0.6 °C in 5 min</span>
+        @if (latestReading(); as reading) {
+          <span>{{ reading.timestampUtc | date: 'dd MMM yyyy, HH:mm:ss' : 'UTC' }} UTC</span>
+        } @else {
+          <span>{{ readingState().errorMessage ?? 'Waiting for persisted telemetry' }}</span>
+        }
       </div>
     </article>
 
     <article class="metric-card">
       <div class="metric-card__header">
         <span>Data throughput</span>
-        <span class="trend trend--positive">Live</span>
+        <span class="trend trend--planned">Planned</span>
       </div>
-      <div class="metric-value"><strong>12.1</strong><span>msg/s</span></div>
+      <div class="metric-value"><strong>—</strong><span>msg/s</span></div>
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--throughput" aria-hidden="true"></span>
-        <span>4 active consumers</span>
+        <span>Available after live metrics integration</span>
       </div>
     </article>
 
     <article class="metric-card">
       <div class="metric-card__header">
         <span>End-to-end latency</span>
-        <span class="trend trend--positive">Healthy</span>
+        <span class="trend trend--planned">Planned</span>
       </div>
-      <div class="metric-value"><strong>84</strong><span>ms</span></div>
+      <div class="metric-value"><strong>—</strong><span>ms</span></div>
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--latency" aria-hidden="true"></span>
-        <span>P95 · 126 ms</span>
+        <span>Available after live metrics integration</span>
       </div>
     </article>
   </section>
 
   <section class="main-grid">
-    <app-telemetry-chart />
+    <app-telemetry-chart
+      [readings]="readingState().readings"
+      [selectedDeviceId]="selectedDeviceId()"
+      [isLoading]="readingState().status === 'loading'"
+      [errorMessage]="readingState().errorMessage"
+    />
     <app-device-list
       [deviceIds]="deviceIds()"
       [selectedDeviceId]="selectedDeviceId()"

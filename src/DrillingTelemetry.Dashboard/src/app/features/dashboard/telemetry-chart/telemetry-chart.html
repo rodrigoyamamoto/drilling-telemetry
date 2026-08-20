@@ -1,53 +1,69 @@
 <article class="panel telemetry-panel">
   <div class="panel-header">
     <div>
-      <p class="section-kicker">Live acquisition</p>
+      <p class="section-kicker">Persisted history</p>
       <h2>Pressure &amp; temperature</h2>
     </div>
 
-    <div class="chart-controls" aria-label="Chart time range">
-      <button type="button">1m</button>
-      <button class="chart-controls__active" type="button">5m</button>
-      <button type="button">15m</button>
-      <button type="button">1h</button>
-    </div>
+    <span class="sample-count">
+      {{ readings().length | number: '1.0-0' }} samples
+    </span>
   </div>
 
   <div class="chart-legend" aria-label="Chart legend">
-    <span><i class="legend-dot legend-dot--pressure"></i>Pressure <strong>8,247 psi</strong></span>
-    <span><i class="legend-dot legend-dot--temperature"></i>Temperature <strong>117.8 °C</strong></span>
-    <span class="chart-legend__quality">99.98% data quality</span>
+    <span>
+      <i class="legend-dot legend-dot--pressure" aria-hidden="true"></i>
+      Pressure
+      @if (latestReading(); as reading) {
+        <strong>{{ reading.pressurePsi | number: '1.0-1' }} psi</strong>
+      }
+    </span>
+    <span>
+      <i class="legend-dot legend-dot--temperature" aria-hidden="true"></i>
+      Temperature
+      @if (latestReading(); as reading) {
+        <strong>{{ reading.temperatureCelsius | number: '1.0-1' }} °C</strong>
+      }
+    </span>
+    <span class="chart-legend__device">{{ selectedDeviceId() ?? 'No device selected' }}</span>
   </div>
 
-  <div
-    class="telemetry-chart"
-    role="img"
-    aria-label="Pressure and temperature trends for the last five minutes, both within their normal operating ranges"
-  >
-    <div class="chart-y-axis" aria-hidden="true">
-      <span>8,500</span><span>8,250</span><span>8,000</span><span>7,750</span>
-    </div>
-    <div class="chart-y-axis chart-y-axis--right" aria-hidden="true">
-      <span>122°</span><span>118°</span><span>114°</span><span>110°</span>
-    </div>
+  <div class="chart-frame" [attr.aria-busy]="isLoading()">
+    <canvas
+      #chartCanvas
+      role="img"
+      [attr.aria-label]="
+        'Historical pressure and temperature readings for ' +
+        (selectedDeviceId() ?? 'the selected device')
+      "
+    ></canvas>
 
-    <div class="chart-plot" aria-hidden="true">
-      <div class="chart-grid"></div>
-      <div class="chart-area chart-area--pressure"></div>
-      <div class="chart-area chart-area--temperature"></div>
-      <span class="current-point current-point--pressure"></span>
-      <span class="current-point current-point--temperature"></span>
-      <span class="now-line"></span>
-    </div>
-
-    <div class="chart-x-axis" aria-hidden="true">
-      <span>15:42</span><span>15:43</span><span>15:44</span><span>15:45</span><span>Now</span>
-    </div>
+    @if (isLoading()) {
+      <div class="chart-state" role="status">
+        <span class="chart-spinner" aria-hidden="true"></span>
+        <strong>Loading telemetry history</strong>
+        <small>Retrieving the most recent persisted samples.</small>
+      </div>
+    } @else if (errorMessage(); as error) {
+      <div class="chart-state chart-state--error" role="alert">
+        <span class="chart-state__icon" aria-hidden="true">!</span>
+        <strong>History unavailable</strong>
+        <small>{{ error }}</small>
+      </div>
+    } @else if (!hasReadings()) {
+      <div class="chart-state" role="status">
+        <span class="chart-state__icon" aria-hidden="true">0</span>
+        <strong>No readings found</strong>
+        <small>The selected device has no persisted telemetry samples.</small>
+      </div>
+    }
   </div>
 
   <footer class="chart-footer">
-    <span><i class="health-indicator"></i>Stream healthy</span>
-    <span>Last sequence · 18,492</span>
-    <span>No gaps detected</span>
+    <span>Chronological order · oldest to newest</span>
+    @if (latestReading(); as reading) {
+      <span>Last sequence · {{ reading.sequenceNumber | number: '1.0-0' }}</span>
+      <span>{{ reading.timestampUtc | date: 'dd MMM yyyy, HH:mm:ss' : 'UTC' }} UTC</span>
+    }
   </footer>
 </article>

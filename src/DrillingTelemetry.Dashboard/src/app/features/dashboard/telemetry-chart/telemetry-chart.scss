@@ -3,36 +3,20 @@
   min-width: 0;
 }
 
+.sample-count {
+  padding: 0.38rem 0.58rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .chart-legend,
 .chart-footer {
   display: flex;
   align-items: center;
-}
-
-.chart-controls {
-  display: inline-flex;
-  padding: 0.2rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: rgba(5, 12, 18, 0.5);
-}
-
-.chart-controls button {
-  min-width: 2.3rem;
-  padding: 0.36rem 0.45rem;
-  border: 0;
-  border-radius: 0.35rem;
-  background: transparent;
-  color: var(--subtle);
-  font-size: 0.64rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.chart-controls button:hover,
-.chart-controls__active {
-  background: var(--surface-raised) !important;
-  color: var(--text) !important;
 }
 
 .chart-legend {
@@ -54,154 +38,124 @@
   font-variant-numeric: tabular-nums;
 }
 
+.chart-legend__device {
+  margin-left: auto;
+  color: var(--cyan);
+  font-weight: 700;
+}
+
 .legend-dot {
   width: 0.42rem;
   height: 0.42rem;
   border-radius: 50%;
 }
 
-.legend-dot--pressure { background: var(--cyan); }
-.legend-dot--temperature { background: var(--amber); }
-
-.chart-legend__quality {
-  margin-left: auto;
-  color: var(--green);
+.legend-dot--pressure {
+  background: var(--cyan);
 }
 
-.telemetry-chart {
+.legend-dot--temperature {
+  background: var(--amber);
+}
+
+.chart-frame {
   position: relative;
-  display: grid;
-  grid-template-columns: 2.75rem minmax(0, 1fr) 2.5rem;
-  grid-template-rows: 15rem 1.5rem;
+  height: 17.5rem;
   margin-top: 1rem;
 }
 
-.chart-y-axis {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 0.15rem 0 0.4rem;
+.chart-frame canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.42rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 0.7rem;
+  background: rgba(8, 17, 24, 0.94);
+  text-align: center;
+}
+
+.chart-state strong {
+  font-size: 0.74rem;
+}
+
+.chart-state small {
   color: var(--subtle);
-  font-size: 0.58rem;
-  font-variant-numeric: tabular-nums;
+  font-size: 0.62rem;
 }
 
-.chart-y-axis--right {
-  align-items: flex-end;
-}
-
-.chart-plot {
-  position: relative;
-  overflow: hidden;
-  border-bottom: 1px solid var(--border-strong);
-}
-
-.chart-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 100% 25%, 12.5% 100%;
-  opacity: 0.55;
-}
-
-.chart-area {
-  position: absolute;
-  inset: 0;
-  opacity: 0.88;
-}
-
-.chart-area--pressure {
-  background: linear-gradient(to bottom, rgba(50, 214, 208, 0.28), rgba(50, 214, 208, 0.015));
-  clip-path: polygon(0 68%, 4% 62%, 8% 66%, 12% 54%, 16% 57%, 20% 48%, 24% 51%, 28% 43%, 32% 49%, 36% 38%, 40% 41%, 44% 34%, 48% 39%, 52% 31%, 56% 34%, 60% 27%, 64% 32%, 68% 24%, 72% 28%, 76% 22%, 80% 30%, 84% 21%, 88% 25%, 92% 18%, 96% 23%, 100% 20%, 100% 100%, 0 100%);
-  border-top: 2px solid var(--cyan);
-}
-
-.chart-area--temperature {
-  inset: 20% 0 0;
-  background: linear-gradient(to bottom, rgba(245, 174, 81, 0.17), transparent 55%);
-  clip-path: polygon(0 48%, 5% 51%, 10% 45%, 15% 49%, 20% 42%, 25% 46%, 30% 39%, 35% 44%, 40% 38%, 45% 41%, 50% 35%, 55% 39%, 60% 32%, 65% 36%, 70% 30%, 75% 33%, 80% 28%, 85% 32%, 90% 25%, 95% 29%, 100% 24%, 100% 100%, 0 100%);
-  border-top: 2px solid var(--amber);
-}
-
-.now-line {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.3), transparent);
-}
-
-.current-point {
-  position: absolute;
-  right: -0.26rem;
-  z-index: 2;
-  width: 0.55rem;
-  height: 0.55rem;
-  border: 2px solid var(--surface-raised);
+.chart-state__icon,
+.chart-spinner {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-bottom: 0.35rem;
+  place-items: center;
   border-radius: 50%;
 }
 
-.current-point--pressure {
-  top: 19%;
-  background: var(--cyan);
-  box-shadow: 0 0 0.75rem rgba(50, 214, 208, 0.7);
+.chart-state__icon {
+  background: rgba(143, 163, 181, 0.08);
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
 }
 
-.current-point--temperature {
-  top: 54%;
-  background: var(--amber);
-  box-shadow: 0 0 0.75rem rgba(245, 174, 81, 0.6);
+.chart-state--error .chart-state__icon {
+  background: var(--amber-soft);
+  color: var(--amber);
 }
 
-.chart-x-axis {
-  grid-column: 2;
-  display: flex;
-  justify-content: space-between;
-  padding-top: 0.55rem;
-  color: var(--subtle);
-  font-size: 0.58rem;
+.chart-spinner {
+  border: 2px solid rgba(50, 214, 208, 0.15);
+  border-top-color: var(--cyan);
+  animation: chart-spin 0.8s linear infinite;
 }
 
 .chart-footer {
   gap: 1.5rem;
-  margin: 0.45rem -1.15rem -1.15rem;
+  min-height: 2.85rem;
+  margin: 0.6rem -1.15rem -1.15rem;
   padding: 0.85rem 1.15rem;
   border-top: 1px solid var(--border);
   color: var(--subtle);
   font-size: 0.62rem;
 }
 
-.chart-footer span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
+.chart-footer span:last-child {
+  margin-left: auto;
 }
 
-.health-indicator {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 0.75rem rgba(107, 221, 155, 0.55);
+@keyframes chart-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 48rem) {
-  .chart-legend {
+  .chart-legend,
+  .chart-footer {
     flex-wrap: wrap;
   }
 
-  .chart-legend__quality {
+  .chart-legend__device,
+  .chart-footer span:last-child {
     width: 100%;
     margin-left: 0;
   }
 
-  .telemetry-chart {
-    grid-template-rows: 12rem 1.5rem;
+  .chart-frame {
+    height: 14rem;
   }
 
   .chart-footer {
-    flex-wrap: wrap;
     gap: 0.65rem 1rem;
   }
 }
