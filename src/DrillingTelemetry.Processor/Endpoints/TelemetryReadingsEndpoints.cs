@@ -126,6 +126,9 @@ internal static class TelemetryReadingsEndpoints
             reading.DeviceId,
             reading.AcquisitionSessionId,
             reading.SequenceNumber,
+            reading.WellId,
+            reading.WellboreId,
+            reading.MeasuredDepthMetres,
             reading.PressurePsi,
             reading.TemperatureCelsius,
             reading.TimestampUtc);

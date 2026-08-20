@@ -21,6 +21,21 @@ public sealed class TelemetryReading
     public long SequenceNumber { get; set; }
 
     /// <summary>
+    /// Gets or sets the identifier of the well being drilled.
+    /// </summary>
+    public string WellId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the identifier of the wellbore containing the tool.
+    /// </summary>
+    public string WellboreId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the distance travelled along the wellbore, in metres.
+    /// </summary>
+    public double MeasuredDepthMetres { get; set; }
+
+    /// <summary>
     /// Gets or sets the pressure in pounds per square inch.
     /// </summary>
     public double PressurePsi { get; set; }

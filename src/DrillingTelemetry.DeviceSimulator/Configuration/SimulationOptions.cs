@@ -29,6 +29,21 @@ internal sealed class SimulationOptions
     public int PublishingIntervalMilliseconds { get; set; }
 
     /// <summary>
+    /// Gets or sets the identifier of the simulated well.
+    /// </summary>
+    public string WellId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the identifier of the simulated wellbore.
+    /// </summary>
+    public string WellboreId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the initial measured depth, in metres.
+    /// </summary>
+    public double InitialMeasuredDepthMetres { get; set; }
+
+    /// <summary>
     /// Gets or sets the pressure used by fixed generation.
     /// </summary>
     public double FixedPressurePsi { get; set; }

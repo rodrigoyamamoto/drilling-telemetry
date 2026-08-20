@@ -23,6 +23,9 @@ internal sealed class TelemetryHistoryReader
             device_id AS "DeviceId",
             acquisition_session_id AS "AcquisitionSessionId",
             sequence_number AS "SequenceNumber",
+            well_id AS "WellId",
+            wellbore_id AS "WellboreId",
+            measured_depth_metres AS "MeasuredDepthMetres",
             pressure_psi AS "PressurePsi",
             temperature_celsius AS "TemperatureCelsius",
             timestamp_utc AS "TimestampUtc"
@@ -32,6 +35,9 @@ internal sealed class TelemetryHistoryReader
                 device_id,
                 acquisition_session_id,
                 sequence_number,
+                well_id,
+                wellbore_id,
+                measured_depth_metres,
                 pressure_psi,
                 temperature_celsius,
                 timestamp_utc

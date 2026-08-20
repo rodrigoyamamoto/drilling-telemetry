@@ -113,6 +113,15 @@ export class DashboardPage {
   /** Most recent reading available to the dashboard. */
   protected readonly latestReading = computed(() => this.displayedReadings().at(-1) ?? null);
 
+  /** Compact identifier displayed beside the active well. */
+  protected readonly wellMonogram = computed(() => {
+    const wellId = this.latestReading()?.wellId;
+
+    return wellId
+      ? wellId.replaceAll(/[^a-zA-Z0-9]/g, '').slice(-2).toUpperCase()
+      : '—';
+  });
+
   /** Short label describing the historical reading state. */
   protected readonly readingStatusLabel = computed(() => {
     const state = this.readingState();

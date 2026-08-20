@@ -20,6 +20,7 @@ internal sealed class TelemetrySimulation
 
     private readonly TimeProvider _timeProvider;
     private readonly SimulationSettingsState _settingsState;
+    private readonly SimulationDrillingContext _drillingContext;
 
     /// <summary>
     /// Initialises a telemetry simulation.
@@ -36,21 +37,27 @@ internal sealed class TelemetrySimulation
     /// <param name="settingsState">
     /// Provides the current runtime simulation settings.
     /// </param>
+    /// <param name="drillingContext">
+    /// Identifies the well, wellbore and measured depth being simulated.
+    /// </param>
     public TelemetrySimulation(
         ITelemetryReadingGenerator readingGenerator,
         ITelemetryReadingPublisher readingPublisher,
         TimeProvider timeProvider,
-        SimulationSettingsState settingsState)
+        SimulationSettingsState settingsState,
+        SimulationDrillingContext drillingContext)
     {
         ArgumentNullException.ThrowIfNull(readingGenerator);
         ArgumentNullException.ThrowIfNull(readingPublisher);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(settingsState);
+        ArgumentNullException.ThrowIfNull(drillingContext);
 
         _readingGenerator = readingGenerator;
         _readingPublisher = readingPublisher;
         _timeProvider = timeProvider;
         _settingsState = settingsState;
+        _drillingContext = drillingContext;
     }
 
     /// <summary>
@@ -75,6 +82,10 @@ internal sealed class TelemetrySimulation
             TelemetryReading reading = _readingGenerator.Generate(deviceId);
             reading.AcquisitionSessionId = _acquisitionSessionId;
             reading.SequenceNumber = GetNextSequenceNumber(deviceId);
+            reading.WellId = _drillingContext.WellId;
+            reading.WellboreId = _drillingContext.WellboreId;
+            reading.MeasuredDepthMetres =
+                _drillingContext.MeasuredDepthMetres;
 
             await _readingPublisher.PublishAsync(reading, cancellationToken);
         }

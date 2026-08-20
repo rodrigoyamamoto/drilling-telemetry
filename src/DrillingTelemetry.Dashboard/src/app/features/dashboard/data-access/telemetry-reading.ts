@@ -9,6 +9,15 @@ export interface TelemetryReading {
   /** Sequence number assigned during acquisition. */
   readonly sequenceNumber: number;
 
+  /** Identifier of the well being drilled. */
+  readonly wellId: string;
+
+  /** Identifier of the wellbore containing the tool. */
+  readonly wellboreId: string;
+
+  /** Distance travelled along the wellbore, in metres. */
+  readonly measuredDepthMetres: number;
+
   /** Pressure in pounds per square inch. */
   readonly pressurePsi: number;
 

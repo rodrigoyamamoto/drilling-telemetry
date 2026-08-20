@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
     device_id            text             NOT NULL,
     acquisition_session_id uuid           NOT NULL,
     sequence_number      bigint           NOT NULL,
+    well_id              text             NOT NULL,
+    wellbore_id          text             NOT NULL,
+    measured_depth_metres double precision NOT NULL,
     pressure_psi         double precision NOT NULL,
     temperature_celsius  double precision NOT NULL,
     timestamp_utc        timestamp with time zone NOT NULL,
@@ -18,7 +21,10 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
         ),
 
     CONSTRAINT ck_telemetry_readings_sequence_number
-        CHECK (sequence_number > 0)
+        CHECK (sequence_number > 0),
+
+    CONSTRAINT ck_telemetry_readings_measured_depth
+        CHECK (measured_depth_metres >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS ix_telemetry_readings_device_timestamp

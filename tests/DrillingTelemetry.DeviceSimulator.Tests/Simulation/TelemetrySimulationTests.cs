@@ -57,7 +57,8 @@ public sealed class TelemetrySimulationTests
             readingGenerator,
             readingPublisher,
             timeProvider,
-            settingsState);
+            settingsState,
+            CreateDrillingContext());
 
         // Act
         await simulation.PublishCycleAsync(
@@ -148,7 +149,8 @@ public sealed class TelemetrySimulationTests
             readingGenerator,
             readingPublisher,
             timeProvider,
-            settingsState);
+            settingsState,
+            CreateDrillingContext());
 
         using var cancellationTokenSource =
             new CancellationTokenSource();
@@ -265,7 +267,8 @@ public sealed class TelemetrySimulationTests
             readingGenerator,
             readingPublisher,
             timeProvider,
-            settingsState);
+            settingsState,
+            CreateDrillingContext());
 
         using var cancellationTokenSource =
             new CancellationTokenSource();
@@ -318,6 +321,14 @@ public sealed class TelemetrySimulationTests
     /// <summary>
     /// Records readings published during a test.
     /// </summary>
+    private static SimulationDrillingContext CreateDrillingContext()
+    {
+        return new SimulationDrillingContext(
+            "TEST-WELL",
+            "TEST-WELLBORE",
+            measuredDepthMetres: 2_847.6);
+    }
+
     private sealed class RecordingTelemetryReadingPublisher
         : ITelemetryReadingPublisher
     {

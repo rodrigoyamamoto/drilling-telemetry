@@ -447,6 +447,24 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 "than zero.");
         }
 
+        if (string.IsNullOrWhiteSpace(reading.WellId))
+        {
+            throw new JsonException(
+                "The telemetry well identifier is empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reading.WellboreId))
+        {
+            throw new JsonException(
+                "The telemetry wellbore identifier is empty.");
+        }
+
+        if (reading.MeasuredDepthMetres < 0)
+        {
+            throw new JsonException(
+                "The telemetry measured depth must not be negative.");
+        }
+
         return reading;
     }
 

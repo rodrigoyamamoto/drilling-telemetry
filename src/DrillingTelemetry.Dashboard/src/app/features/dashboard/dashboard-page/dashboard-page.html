@@ -27,17 +27,26 @@
 
   <section class="asset-context" aria-label="Current drilling context">
     <div class="asset-context__identity">
-      <span class="asset-monogram" aria-hidden="true">A7</span>
+      <span class="asset-monogram" aria-hidden="true">{{ wellMonogram() }}</span>
       <div>
         <span class="field-label">Active well</span>
-        <strong>Archer A-07</strong>
+        <strong>{{ latestReading()?.wellId ?? 'Waiting for telemetry' }}</strong>
       </div>
     </div>
 
     <dl class="context-details">
-      <div><dt>Wellbore</dt><dd>A-07 Main</dd></div>
+      <div><dt>Wellbore</dt><dd>{{ latestReading()?.wellboreId ?? '—' }}</dd></div>
       <div><dt>Operation</dt><dd>Drilling ahead</dd></div>
-      <div><dt>Measured depth</dt><dd>2,847.6 m</dd></div>
+      <div>
+        <dt>Measured depth</dt>
+        <dd>
+          @if (latestReading(); as reading) {
+            {{ reading.measuredDepthMetres | number: '1.1-1' }} m
+          } @else {
+            —
+          }
+        </dd>
+      </div>
       <div><dt>Acquisition</dt><dd>Real-time</dd></div>
     </dl>
 

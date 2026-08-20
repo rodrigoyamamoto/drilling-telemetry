@@ -65,6 +65,18 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                 "Publishing interval must be at least 50 milliseconds.")
             .Validate(
                 options =>
+                    !string.IsNullOrWhiteSpace(options.WellId),
+                "A well identifier must be configured.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(options.WellboreId),
+                "A wellbore identifier must be configured.")
+            .Validate(
+                options =>
+                    options.InitialMeasuredDepthMetres >= 0,
+                "Initial measured depth must not be negative.")
+            .Validate(
+                options =>
                     Enum.IsDefined(options.GenerationMode),
                 "Telemetry generation mode is invalid.")
             .Validate(
@@ -84,6 +96,8 @@ internal static class DeviceSimulatorServiceCollectionExtensions
         services.AddSingleton<TelemetryPublishingMetrics>();
 
         services.AddSingleton(CreateInitialSettingsState);
+
+        services.AddSingleton(CreateDrillingContext);
 
         services.AddSingleton<SimulationSettingsCommandApplier>();
 
@@ -118,6 +132,26 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                 options.PublishingIntervalMilliseconds));
 
         return new SimulationSettingsState(initialSettings);
+    }
+
+    /// <summary>
+    /// Creates the drilling context assigned to generated readings.
+    /// </summary>
+    /// <param name="serviceProvider">
+    /// Provides the validated simulation options.
+    /// </param>
+    /// <returns>The configured simulation drilling context.</returns>
+    private static SimulationDrillingContext CreateDrillingContext(
+        IServiceProvider serviceProvider)
+    {
+        SimulationOptions options = serviceProvider
+            .GetRequiredService<IOptions<SimulationOptions>>()
+            .Value;
+
+        return new SimulationDrillingContext(
+            options.WellId,
+            options.WellboreId,
+            options.InitialMeasuredDepthMetres);
     }
 
     /// <summary>

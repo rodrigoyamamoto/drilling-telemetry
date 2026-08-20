@@ -17,6 +17,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
     private readonly RabbitMqOptions _rabbitMqOptions;
     private readonly ITelemetryReadingGenerator _readingGenerator;
     private readonly SimulationSettingsState _settingsState;
+    private readonly SimulationDrillingContext _drillingContext;
     private readonly SimulationSettingsCommandApplier _settingsCommandApplier;
     private readonly TimeProvider _timeProvider;
     private readonly TelemetryPublishingMetrics _publishingMetrics;
@@ -38,6 +39,9 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
     /// <param name="settingsCommandApplier">
     /// Applies settings received while the simulation is running.
     /// </param>
+    /// <param name="drillingContext">
+    /// Identifies the well, wellbore and measured depth being simulated.
+    /// </param>
     /// <param name="timeProvider">
     /// Provides time used by the simulation.
     /// </param>
@@ -55,6 +59,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         ITelemetryReadingGenerator readingGenerator,
         SimulationSettingsState settingsState,
         SimulationSettingsCommandApplier settingsCommandApplier,
+        SimulationDrillingContext drillingContext,
         TimeProvider timeProvider,
         TelemetryPublishingMetrics publishingMetrics,
         ILoggerFactory loggerFactory,
@@ -64,6 +69,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         ArgumentNullException.ThrowIfNull(readingGenerator);
         ArgumentNullException.ThrowIfNull(settingsState);
         ArgumentNullException.ThrowIfNull(settingsCommandApplier);
+        ArgumentNullException.ThrowIfNull(drillingContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(publishingMetrics);
         ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -73,6 +79,7 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
         _readingGenerator = readingGenerator;
         _settingsState = settingsState;
         _settingsCommandApplier = settingsCommandApplier;
+        _drillingContext = drillingContext;
         _timeProvider = timeProvider;
         _publishingMetrics = publishingMetrics;
         _loggerFactory = loggerFactory;
@@ -126,7 +133,8 @@ internal sealed class TelemetrySimulationWorker : BackgroundService
             _readingGenerator,
             readingPublisher,
             _timeProvider,
-            _settingsState);
+            _settingsState,
+            _drillingContext);
 
         string settingsConsumerTag =
             await settingsConsumer.StartAsync(stoppingToken);
