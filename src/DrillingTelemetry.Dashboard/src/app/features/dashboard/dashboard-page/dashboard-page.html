@@ -86,7 +86,14 @@
 
   <section class="main-grid">
     <app-telemetry-chart />
-    <app-device-list />
+    <app-device-list
+      [deviceIds]="deviceIds()"
+      [selectedDeviceId]="selectedDeviceId()"
+      [isLoading]="isLoadingDevices()"
+      [errorMessage]="deviceLoadError()"
+      (deviceSelected)="selectDevice($event)"
+      (retryRequested)="loadDevices()"
+    />
   </section>
 
   <section class="lower-grid">

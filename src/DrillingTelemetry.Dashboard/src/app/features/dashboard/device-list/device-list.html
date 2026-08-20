@@ -1,40 +1,60 @@
-<aside class="panel" id="devices">
+<aside class="panel" id="devices" aria-labelledby="devices-title">
   <div class="panel-header">
     <div>
       <p class="section-kicker">Data sources</p>
-      <h2>Active devices</h2>
+      <h2 id="devices-title">Available devices</h2>
     </div>
-    <span class="panel-count">3 online</span>
+
+    @if (isLoading()) {
+      <span class="panel-count">Loading</span>
+    } @else {
+      <span class="panel-count">{{ deviceIds().length }} available</span>
+    }
   </div>
 
-  <div class="device-list">
-    <button class="device-row device-row--selected" type="button" aria-pressed="true">
-      <span class="device-row__state"><i></i></span>
-      <span class="device-row__identity"><strong>DRILL-001</strong><small>Primary MWD tool</small></span>
-      <span class="device-row__reading"><strong>8,247</strong><small>psi</small></span>
-    </button>
-
-    <button class="device-row" type="button" aria-pressed="false">
-      <span class="device-row__state"><i></i></span>
-      <span class="device-row__identity"><strong>DRILL-002</strong><small>Annular sensor</small></span>
-      <span class="device-row__reading"><strong>7,918</strong><small>psi</small></span>
-    </button>
-
-    <button class="device-row" type="button" aria-pressed="false">
-      <span class="device-row__state"><i></i></span>
-      <span class="device-row__identity"><strong>DRILL-003</strong><small>Backup MWD tool</small></span>
-      <span class="device-row__reading"><strong>8,031</strong><small>psi</small></span>
-    </button>
+  <div class="device-list" aria-live="polite">
+    @if (isLoading()) {
+      @for (placeholder of [1, 2, 3]; track placeholder) {
+        <div class="device-skeleton" aria-hidden="true">
+          <span></span>
+          <div><i></i><i></i></div>
+        </div>
+      }
+      <span class="visually-hidden">Loading available devices.</span>
+    } @else if (errorMessage(); as error) {
+      <div class="device-state device-state--error">
+        <span class="device-state__icon" aria-hidden="true">!</span>
+        <strong>Devices unavailable</strong>
+        <p>{{ error }} Check that the Processor is running and try again.</p>
+        <button type="button" (click)="retryRequested.emit()">Try again</button>
+      </div>
+    } @else if (deviceIds().length === 0) {
+      <div class="device-state">
+        <span class="device-state__icon" aria-hidden="true">0</span>
+        <strong>No telemetry devices found</strong>
+        <p>Start the simulator to persist the first telemetry readings.</p>
+      </div>
+    } @else {
+      @for (deviceId of deviceIds(); track deviceId) {
+        <button
+          class="device-row"
+          [class.device-row--selected]="selectedDeviceId() === deviceId"
+          [attr.aria-pressed]="selectedDeviceId() === deviceId"
+          type="button"
+          (click)="selectDevice(deviceId)"
+        >
+          <span class="device-row__state"><i></i></span>
+          <span class="device-row__identity">
+            <strong>{{ deviceId }}</strong>
+            <small>Historical telemetry available</small>
+          </span>
+          <span class="device-row__selection">
+            {{ selectedDeviceId() === deviceId ? 'Selected' : 'View' }}
+          </span>
+        </button>
+      }
+    }
   </div>
 
-  <div class="stream-summary">
-    <div class="stream-summary__header"><span>Stream integrity</span><strong>Excellent</strong></div>
-    <div class="quality-bar" aria-label="Stream integrity 99.98 percent"><span></span></div>
-    <dl>
-      <div><dt>Received</dt><dd>18,492</dd></div>
-      <div><dt>Duplicates</dt><dd>3</dd></div>
-      <div><dt>Out of order</dt><dd>1</dd></div>
-      <div><dt>Dead letter</dt><dd>0</dd></div>
-    </dl>
-  </div>
+  <p class="device-help">Select a device to load its most recent persisted readings.</p>
 </aside>

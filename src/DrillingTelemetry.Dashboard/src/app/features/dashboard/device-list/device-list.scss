@@ -3,8 +3,7 @@
   min-width: 0;
 }
 
-.device-row,
-.stream-summary__header {
+.device-row {
   display: flex;
   align-items: center;
 }
@@ -22,6 +21,7 @@
 .device-list {
   display: grid;
   gap: 0.5rem;
+  min-height: 12.4rem;
   margin-top: 1.15rem;
 }
 
@@ -72,77 +72,136 @@
   gap: 0.15rem;
 }
 
-.device-row__identity strong,
-.device-row__reading strong {
+.device-row__identity strong {
   font-size: 0.72rem;
 }
 
-.device-row small,
-.stream-summary dt {
+.device-row__identity small,
+.device-help,
+.device-state p {
   color: var(--subtle);
   font-size: 0.6rem;
 }
 
-.device-row__reading {
-  display: grid;
-  justify-items: end;
-  gap: 0.15rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.stream-summary {
-  margin-top: 1.25rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--border);
-}
-
-.stream-summary__header {
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: 0.67rem;
-}
-
-.stream-summary__header strong {
-  color: var(--green);
-  font-size: 0.65rem;
-}
-
-.quality-bar {
-  height: 0.3rem;
-  margin: 0.65rem 0 1rem;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.quality-bar span {
-  display: block;
-  width: 99.98%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #2aa8a3, var(--green));
-}
-
-.stream-summary dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
-  margin: 0;
-}
-
-.stream-summary dl div {
-  padding: 0.65rem;
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.stream-summary dt {
-  margin-bottom: 0.25rem;
-}
-
-.stream-summary dd {
-  margin: 0;
-  font-size: 0.76rem;
+.device-row__selection {
+  color: var(--cyan);
+  font-size: 0.62rem;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+}
+
+.device-help {
+  margin: 1.1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.device-state {
+  display: grid;
+  min-height: 12.4rem;
+  place-items: center;
+  align-content: center;
+  padding: 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 0.65rem;
+  text-align: center;
+}
+
+.device-state__icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.7rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(143, 163, 181, 0.08);
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.device-state strong {
+  font-size: 0.72rem;
+}
+
+.device-state p {
+  max-width: 15rem;
+  margin: 0.35rem 0 0;
+  line-height: 1.5;
+}
+
+.device-state button {
+  margin-top: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.64rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.device-state button:hover {
+  border-color: rgba(50, 214, 208, 0.5);
+  color: var(--cyan);
+}
+
+.device-state--error .device-state__icon {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.device-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.device-skeleton > span,
+.device-skeleton i {
+  display: block;
+  border-radius: 0.4rem;
+  background: linear-gradient(90deg, rgba(143, 163, 181, 0.06), rgba(143, 163, 181, 0.13), rgba(143, 163, 181, 0.06));
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.6s ease-in-out infinite;
+}
+
+.device-skeleton > span {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.device-skeleton div {
+  display: grid;
+  flex: 1;
+  gap: 0.35rem;
+}
+
+.device-skeleton i:first-child {
+  width: 45%;
+  height: 0.55rem;
+}
+
+.device-skeleton i:last-child {
+  width: 70%;
+  height: 0.4rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes skeleton-loading {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
