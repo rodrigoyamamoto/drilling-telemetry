@@ -42,9 +42,9 @@ internal static class TelemetryReadingsEndpoints
                 GetReadingsAsync)
             .WithName("GetTelemetryReadings")
             .WithSummary(
-                "Gets recent persisted telemetry readings for a device.")
+                "Gets recent persisted telemetry readings for a device's latest acquisition session.")
             .WithDescription(
-                "Returns the newest readings in chronological order for charting.")
+                "Returns the newest readings in chronological order, scoped to the latest acquisition session identified by the most recent acquisition timestamp.")
             .Produces<TelemetryReadingResponse[]>(
                 StatusCodes.Status200OK)
             .ProducesValidationProblem();
@@ -52,7 +52,7 @@ internal static class TelemetryReadingsEndpoints
         return group;
     }
 
-    private static async Task<Ok<string[]>> GetDeviceIdsAsync(
+    private async static Task<Ok<string[]>> GetDeviceIdsAsync(
         ITelemetryHistoryReader telemetryHistoryReader,
         CancellationToken cancellationToken)
     {

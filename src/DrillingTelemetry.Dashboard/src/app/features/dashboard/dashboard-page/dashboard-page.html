@@ -54,6 +54,12 @@
         </dd>
       </div>
       <div>
+        <dt>Acquisition session</dt>
+        <dd [attr.title]="activeAcquisitionSessionId() ?? ''">
+          {{ activeAcquisitionSessionLabel() }}
+        </dd>
+      </div>
+      <div>
         <dt>Acquisition</dt>
         <dd>Real-time</dd>
       </div>

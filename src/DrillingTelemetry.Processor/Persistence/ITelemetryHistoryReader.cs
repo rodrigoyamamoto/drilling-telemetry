@@ -18,14 +18,18 @@ internal interface ITelemetryHistoryReader
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets the most recent persisted readings for a device.
+    /// Gets the most recent persisted readings for a device, scoped to the
+    /// latest acquisition session identified by the newest acquisition
+    /// timestamp.
     /// </summary>
     /// <param name="deviceId">Identifier of the telemetry device.</param>
     /// <param name="limit">Maximum number of readings to return.</param>
     /// <param name="cancellationToken">
     /// Signals that the database query should be cancelled.
     /// </param>
-    /// <returns>The readings in chronological order.</returns>
+    /// <returns>
+    /// The readings of the latest acquisition session in chronological order.
+    /// </returns>
     Task<IReadOnlyList<TelemetryReading>> GetReadingsAsync(
         string deviceId,
         int limit,

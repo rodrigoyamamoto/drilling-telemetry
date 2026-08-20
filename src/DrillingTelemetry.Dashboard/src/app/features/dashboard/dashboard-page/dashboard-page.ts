@@ -105,13 +105,25 @@ export class DashboardPage {
   /** SignalR connection status exposed by the live telemetry service. */
   protected readonly liveConnectionStatus = this.telemetryLiveService.connectionStatus;
 
-  /** Historical baseline merged with accepted live readings. */
+  /** Historical baseline merged with accepted live readings, scoped to the active acquisition session. */
   protected readonly displayedReadings = computed(() =>
     this.mergeReadings(this.readingState().readings, this.liveReadings()),
   );
 
   /** Most recent reading available to the dashboard. */
   protected readonly latestReading = computed(() => this.displayedReadings().at(-1) ?? null);
+
+  /** Identifier of the acquisition session currently displayed. */
+  protected readonly activeAcquisitionSessionId = computed(
+    () => this.latestReading()?.acquisitionSessionId ?? null,
+  );
+
+  /** Short, human-readable label for the active acquisition session. */
+  protected readonly activeAcquisitionSessionLabel = computed(() => {
+    const sessionId = this.activeAcquisitionSessionId();
+
+    return sessionId ? sessionId.slice(0, 8).toUpperCase() : '—';
+  });
 
   /** Compact identifier displayed beside the active well. */
   protected readonly wellMonogram = computed(() => {
@@ -329,9 +341,32 @@ export class DashboardPage {
       readingsByIdentity.set(this.createReadingIdentity(reading), reading);
     }
 
-    return [...readingsByIdentity.values()]
+    const deduplicatedReadings = [...readingsByIdentity.values()];
+
+    if (deduplicatedReadings.length === 0) {
+      return [];
+    }
+
+    const activeSessionId = this.findActiveSessionId(deduplicatedReadings);
+
+    return deduplicatedReadings
+      .filter((reading) => reading.acquisitionSessionId === activeSessionId)
       .sort((left, right) => this.compareReadings(left, right))
       .slice(-maximumDisplayedReadings);
+  }
+
+  private findActiveSessionId(readings: readonly TelemetryReading[]): string {
+    let latestReading = readings[0];
+
+    for (const reading of readings.slice(1)) {
+      const comparison = this.compareReadings(reading, latestReading);
+
+      if (comparison >= 0) {
+        latestReading = reading;
+      }
+    }
+
+    return latestReading.acquisitionSessionId;
   }
 
   private createReadingIdentity(reading: TelemetryReading): string {

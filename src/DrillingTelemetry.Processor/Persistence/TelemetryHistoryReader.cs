@@ -19,19 +19,15 @@ internal sealed class TelemetryHistoryReader
 
     private const string SelectReadingsSql =
         """
-        SELECT
-            device_id AS "DeviceId",
-            acquisition_session_id AS "AcquisitionSessionId",
-            sequence_number AS "SequenceNumber",
-            well_id AS "WellId",
-            wellbore_id AS "WellboreId",
-            measured_depth_metres AS "MeasuredDepthMetres",
-            drilling_operation AS "DrillingOperation",
-            depth_change_rate_metres_per_hour AS "DepthChangeRateMetresPerHour",
-            pressure_psi AS "PressurePsi",
-            temperature_celsius AS "TemperatureCelsius",
-            timestamp_utc AS "TimestampUtc"
-        FROM
+        WITH latest_session AS
+        (
+            SELECT acquisition_session_id
+            FROM telemetry_readings
+            WHERE device_id = @DeviceId
+            ORDER BY timestamp_utc DESC, received_at_utc DESC
+            LIMIT 1
+        ),
+        recent_readings AS
         (
             SELECT
                 device_id,
@@ -47,9 +43,24 @@ internal sealed class TelemetryHistoryReader
                 timestamp_utc
             FROM telemetry_readings
             WHERE device_id = @DeviceId
+                AND acquisition_session_id =
+                    (SELECT acquisition_session_id FROM latest_session)
             ORDER BY timestamp_utc DESC, sequence_number DESC
             LIMIT @Limit
-        ) AS recent_readings
+        )
+        SELECT
+            device_id AS "DeviceId",
+            acquisition_session_id AS "AcquisitionSessionId",
+            sequence_number AS "SequenceNumber",
+            well_id AS "WellId",
+            wellbore_id AS "WellboreId",
+            measured_depth_metres AS "MeasuredDepthMetres",
+            drilling_operation AS "DrillingOperation",
+            depth_change_rate_metres_per_hour AS "DepthChangeRateMetresPerHour",
+            pressure_psi AS "PressurePsi",
+            temperature_celsius AS "TemperatureCelsius",
+            timestamp_utc AS "TimestampUtc"
+        FROM recent_readings
         ORDER BY timestamp_utc, sequence_number;
         """;
 
