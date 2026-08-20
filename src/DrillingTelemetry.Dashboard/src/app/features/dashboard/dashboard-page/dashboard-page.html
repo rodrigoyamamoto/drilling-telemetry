@@ -89,27 +89,55 @@
       </div>
     </article>
 
-    <article class="metric-card">
+    <article class="metric-card metric-card--throughput">
       <div class="metric-card__header">
         <span>Data throughput</span>
-        <span class="trend trend--planned">Planned</span>
+        <span class="trend trend--live">
+          {{ telemetryMetrics() ? 'Live' : 'Waiting' }}
+        </span>
       </div>
-      <div class="metric-value"><strong>—</strong><span>msg/s</span></div>
+      <div class="metric-value">
+        @if (telemetryMetrics(); as metrics) {
+          <strong>{{ metrics.readingsPerSecond | number: '1.1-1' }}</strong><span>msg/s</span>
+        } @else {
+          <strong>—</strong><span>msg/s</span>
+        }
+      </div>
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--throughput" aria-hidden="true"></span>
-        <span>Available after live metrics integration</span>
+        @if (telemetryMetrics(); as metrics) {
+          <span>{{ metrics.readingsProcessedTotal | number: '1.0-0' }} accepted since startup</span>
+        } @else {
+          <span>Waiting for Processor metrics</span>
+        }
       </div>
     </article>
 
-    <article class="metric-card">
+    <article class="metric-card metric-card--latency">
       <div class="metric-card__header">
         <span>End-to-end latency</span>
-        <span class="trend trend--planned">Planned</span>
+        <span class="trend trend--live">
+          {{ telemetryMetrics() ? 'Live' : 'Waiting' }}
+        </span>
       </div>
-      <div class="metric-value"><strong>—</strong><span>ms</span></div>
+      <div class="metric-value">
+        @if (telemetryMetrics(); as metrics) {
+          @if (metrics.latestEndToEndLatencyMilliseconds !== null) {
+            <strong>{{ metrics.latestEndToEndLatencyMilliseconds | number: '1.0-0' }}</strong><span>ms</span>
+          } @else {
+            <strong>—</strong><span>ms</span>
+          }
+        } @else {
+          <strong>—</strong><span>ms</span>
+        }
+      </div>
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--latency" aria-hidden="true"></span>
-        <span>Available after live metrics integration</span>
+        @if (telemetryMetrics(); as metrics) {
+          <span>Sampled {{ metrics.sampledAtUtc | date: 'HH:mm:ss' : 'UTC' }} UTC</span>
+        } @else {
+          <span>Waiting for Processor metrics</span>
+        }
       </div>
     </article>
   </section>

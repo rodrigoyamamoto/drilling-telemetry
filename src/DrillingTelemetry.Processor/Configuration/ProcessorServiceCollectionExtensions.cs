@@ -172,8 +172,15 @@ internal static class ProcessorServiceCollectionExtensions
             IOperationalEventBroadcaster,
             SignalROperationalEventBroadcaster>();
 
+        services.AddSingleton<
+            ITelemetryMetricsBroadcaster,
+            SignalRTelemetryMetricsBroadcaster>();
+
         services.AddHostedService<
             RabbitMqTelemetryReadingConsumer>();
+
+        services.AddHostedService<
+            TelemetryMetricsBroadcastWorker>();
 
         return services;
     }

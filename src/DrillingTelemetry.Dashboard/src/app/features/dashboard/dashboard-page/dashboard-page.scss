@@ -206,6 +206,8 @@ h1 {
 
 .metric-card--pressure::before { background: var(--cyan); }
 .metric-card--temperature::before { background: var(--amber); }
+.metric-card--throughput::before { background: var(--green); }
+.metric-card--latency::before { background: #8ca9ff; }
 
 .metric-card__header,
 .metric-card__footer {
@@ -234,12 +236,12 @@ h1 {
   color: var(--muted);
 }
 
-.trend--planned {
-  background: rgba(140, 169, 255, 0.08);
-  color: #8ca9ff;
+.trend--positive {
+  background: rgba(107, 221, 155, 0.08);
+  color: var(--green);
 }
 
-.trend--positive {
+.trend--live {
   background: rgba(107, 221, 155, 0.08);
   color: var(--green);
 }

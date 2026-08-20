@@ -15,6 +15,7 @@ import type { Observable } from 'rxjs';
 import type { OperationalEvent } from '../data-access/operational-event';
 import { OperationalEventsService } from '../data-access/operational-events.service';
 import { TelemetryHistoryService } from '../data-access/telemetry-history.service';
+import type { TelemetryMetrics } from '../data-access/telemetry-metrics';
 import type { TelemetryReading } from '../data-access/telemetry-reading';
 import { TelemetryLiveService } from '../data-access/telemetry-live.service';
 import { DeviceList } from '../device-list/device-list';
@@ -61,6 +62,9 @@ export class DashboardPage {
   private readonly telemetryLiveService = inject(TelemetryLiveService);
 
   private readonly liveReadings = signal<readonly TelemetryReading[]>([]);
+
+  /** Latest processing metrics received from the Processor. */
+  protected readonly telemetryMetrics = signal<TelemetryMetrics | null>(null);
 
   /** Persisted and live operational events in reverse chronological order. */
   protected readonly operationalEvents = signal<readonly OperationalEvent[]>([]);
@@ -158,6 +162,10 @@ export class DashboardPage {
       .subscribe(operationalEvent =>
         this.receiveOperationalEvent(operationalEvent)
       );
+
+    this.telemetryLiveService.metrics$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(metrics => this.telemetryMetrics.set(metrics));
 
     this.telemetryLiveService.connectionEstablished$
       .pipe(takeUntilDestroyed(this.destroyRef))

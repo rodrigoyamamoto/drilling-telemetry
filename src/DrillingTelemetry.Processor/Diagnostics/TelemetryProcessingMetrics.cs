@@ -7,6 +7,8 @@ namespace DrillingTelemetry.Processor.Diagnostics;
 /// </summary>
 internal sealed class TelemetryProcessingMetrics
 {
+    private const long NoLatencyRecorded = -1;
+
     /// <summary>
     /// Identifies the telemetry processor meter.
     /// </summary>
@@ -21,6 +23,10 @@ internal sealed class TelemetryProcessingMetrics
     private readonly Counter<long> _outOfOrderReadings;
     private readonly Histogram<double> _endToEndDuration;
     private readonly Histogram<long> _sequenceGapSize;
+
+    private long _readingsProcessedTotal;
+    private long _latestEndToEndDurationTicks =
+        NoLatencyRecorded;
 
     /// <summary>
     /// Initialises the telemetry processing metrics.
@@ -95,12 +101,43 @@ internal sealed class TelemetryProcessingMetrics
         TimeSpan endToEndDuration)
     {
         _readingsProcessed.Add(1);
+        Interlocked.Increment(
+            ref _readingsProcessedTotal);
 
         if (endToEndDuration >= TimeSpan.Zero)
         {
             _endToEndDuration.Record(
                 endToEndDuration.TotalSeconds);
+
+            Interlocked.Exchange(
+                ref _latestEndToEndDurationTicks,
+                endToEndDuration.Ticks);
         }
+    }
+
+    /// <summary>
+    /// Captures the cumulative accepted-reading count and latest measured
+    /// end-to-end latency.
+    /// </summary>
+    /// <returns>
+    /// Current values used to build a live operational snapshot.
+    /// </returns>
+    public TelemetryMetricsTotals GetTotals()
+    {
+        long latencyTicks = Interlocked.Read(
+            ref _latestEndToEndDurationTicks);
+
+        double? latestLatencyMilliseconds =
+            latencyTicks == NoLatencyRecorded
+                ? null
+                : TimeSpan
+                    .FromTicks(latencyTicks)
+                    .TotalMilliseconds;
+
+        return new TelemetryMetricsTotals(
+            Interlocked.Read(
+                ref _readingsProcessedTotal),
+            latestLatencyMilliseconds);
     }
 
     /// <summary>
@@ -147,3 +184,16 @@ internal sealed class TelemetryProcessingMetrics
         _outOfOrderReadings.Add(1);
     }
 }
+
+/// <summary>
+/// Contains cumulative values captured from telemetry processing.
+/// </summary>
+/// <param name="ReadingsProcessedTotal">
+/// Number of readings accepted for the live stream since processor startup.
+/// </param>
+/// <param name="LatestEndToEndLatencyMilliseconds">
+/// Latest measured duration from acquisition to processing completion.
+/// </param>
+internal readonly record struct TelemetryMetricsTotals(
+    long ReadingsProcessedTotal,
+    double? LatestEndToEndLatencyMilliseconds);
