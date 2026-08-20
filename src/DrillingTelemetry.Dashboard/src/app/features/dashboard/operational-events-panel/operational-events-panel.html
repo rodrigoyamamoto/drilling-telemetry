@@ -1,0 +1,55 @@
+<article class="panel events-panel" id="events">
+  <div class="panel-header">
+    <div>
+      <p class="section-kicker">Operational awareness</p>
+      <h2>Recent events</h2>
+    </div>
+    <span class="event-count">{{ events().length }} recorded</span>
+  </div>
+
+  @if (visibleEvents().length > 0) {
+    <ol class="event-list" aria-live="polite">
+      @for (operationalEvent of visibleEvents(); track operationalEvent.eventId) {
+        <li>
+          <span
+            class="event-icon"
+            [class.event-icon--critical]="operationalEvent.severity === 'Critical'"
+            [class.event-icon--warning]="operationalEvent.severity === 'Warning'"
+            aria-hidden="true"
+          >
+            {{ getIcon(operationalEvent) }}
+          </span>
+          <div>
+            <strong>{{ getTitle(operationalEvent) }}</strong>
+            <small>{{ getDescription(operationalEvent) }}</small>
+          </div>
+          <time [attr.datetime]="operationalEvent.occurredAtUtc">
+            {{ operationalEvent.occurredAtUtc | date: 'HH:mm:ss' : 'UTC' }}
+          </time>
+        </li>
+      }
+    </ol>
+  } @else if (isLoading()) {
+    <div class="events-state">
+      <span class="events-state__marker" aria-hidden="true"></span>
+      <div>
+        <strong>Loading operational events</strong>
+        <small>Reading the latest processor activity.</small>
+      </div>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="events-state events-state--error">
+      <span class="events-state__marker" aria-hidden="true">!</span>
+      <div><strong>Events unavailable</strong><small>{{ errorMessage() }}</small></div>
+      <button class="text-button" type="button" (click)="retryRequested.emit()">Retry</button>
+    </div>
+  } @else {
+    <div class="events-state events-state--clear">
+      <span class="events-state__marker" aria-hidden="true">✓</span>
+      <div>
+        <strong>No anomalies recorded</strong>
+        <small>The telemetry stream is currently clear.</small>
+      </div>
+    </div>
+  }
+</article>

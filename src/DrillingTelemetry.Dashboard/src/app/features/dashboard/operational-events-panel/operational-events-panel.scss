@@ -1,0 +1,115 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.event-count {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--subtle);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.event-list {
+  display: grid;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.event-icon,
+.events-state__marker {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.event-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.event-icon--warning { background: var(--amber-soft); color: var(--amber); }
+.event-icon--critical { background: rgba(255, 107, 120, 0.12); color: #ff6b78; }
+
+.event-list li div,
+.events-state div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.event-list strong,
+.events-state strong {
+  font-size: 0.7rem;
+}
+
+.event-list small,
+.event-list time,
+.events-state small {
+  color: var(--subtle);
+  font-size: 0.61rem;
+}
+
+.event-list time {
+  font-variant-numeric: tabular-nums;
+}
+
+.events-state {
+  display: grid;
+  min-height: 5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.events-state__marker {
+  width: 1.65rem;
+  height: 1.65rem;
+  background: var(--cyan-soft);
+  color: var(--cyan);
+}
+
+.events-state__marker:empty {
+  animation: event-pulse 1.5s ease-in-out infinite;
+}
+
+.events-state--error .events-state__marker {
+  background: rgba(255, 107, 120, 0.12);
+  color: #ff6b78;
+}
+
+.events-state--clear .events-state__marker {
+  background: rgba(107, 221, 155, 0.1);
+  color: var(--green);
+}
+
+.text-button {
+  padding: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--cyan);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@keyframes event-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
