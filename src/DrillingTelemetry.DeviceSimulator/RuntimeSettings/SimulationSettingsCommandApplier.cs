@@ -41,7 +41,9 @@ internal sealed class SimulationSettingsCommandApplier
             command.Revision,
             command.DeviceIds,
             TimeSpan.FromMilliseconds(
-                command.PublishingIntervalMilliseconds));
+                command.PublishingIntervalMilliseconds),
+            command.DrillingOperation,
+            command.DepthChangeRateMetresPerHour);
 
         return _settingsState.TryUpdate(settings);
     }

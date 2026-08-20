@@ -22,12 +22,14 @@ internal sealed class IdempotentTelemetryReadingStore
             well_id,
             wellbore_id,
             measured_depth_metres,
+            drilling_operation,
+            depth_change_rate_metres_per_hour,
             pressure_psi,
             temperature_celsius,
             timestamp_utc,
             payload
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         ON CONFLICT
         (
             device_id,
@@ -139,6 +141,20 @@ internal sealed class IdempotentTelemetryReadingStore
             {
                 NpgsqlDbType = NpgsqlDbType.Double,
                 Value = reading.MeasuredDepthMetres
+            });
+
+        command.Parameters.Add(
+            new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.Text,
+                Value = reading.DrillingOperation.ToString()
+            });
+
+        command.Parameters.Add(
+            new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.Double,
+                Value = reading.DepthChangeRateMetresPerHour
             });
 
         command.Parameters.Add(

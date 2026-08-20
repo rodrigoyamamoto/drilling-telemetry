@@ -16,6 +16,7 @@ import {
 import { finalize } from 'rxjs';
 
 import { SimulationControlService } from '../data-access/simulation-control.service';
+import { DrillingOperation } from '../data-access/simulation-settings';
 
 type SettingsUpdateStatus = 'idle' | 'submitting' | 'accepted' | 'error';
 
@@ -27,6 +28,7 @@ const minimumPublishingIntervalMilliseconds = 50;
 const maximumPublishingIntervalMilliseconds = 5_000;
 const initialPublishingIntervalMilliseconds = 500;
 const initialDeviceIdentifiers = 'DRILL-001\nDRILL-002\nDRILL-003';
+const initialDepthChangeRateMetresPerHour = 18;
 
 /** Presents the controls that will update the running telemetry simulation. */
 @Component({
@@ -56,8 +58,29 @@ export class SimulationControl {
           Validators.max(maximumPublishingIntervalMilliseconds)
         ]
       }
+    ),
+    drillingOperation: new FormControl(DrillingOperation.DrillingAhead, {
+      nonNullable: true,
+      validators: [Validators.required]
+    }),
+    depthChangeRateMetresPerHour: new FormControl(
+      initialDepthChangeRateMetresPerHour,
+      {
+        nonNullable: true,
+        validators: [Validators.required]
+      }
     )
   });
+
+  /** Operations offered by the runtime control. */
+  protected readonly drillingOperations = [
+    { value: DrillingOperation.DrillingAhead, label: 'Drilling ahead' },
+    { value: DrillingOperation.Stationary, label: 'Stationary' },
+    { value: DrillingOperation.TrippingOut, label: 'Tripping out' }
+  ] as const;
+
+  /** Operation values used by the template guidance. */
+  protected readonly operation = DrillingOperation;
 
   /** Minimum interval supported by the backend contract. */
   protected readonly minimumInterval = minimumPublishingIntervalMilliseconds;
@@ -94,10 +117,24 @@ export class SimulationControl {
       this.settingsForm.controls.deviceIdentifiers.value
     );
 
-    if (this.settingsForm.invalid || deviceIds.length === 0) {
+    const drillingOperation =
+      this.settingsForm.controls.drillingOperation.value;
+    const depthChangeRateMetresPerHour =
+      this.settingsForm.controls.depthChangeRateMetresPerHour.value;
+
+    if (
+      this.settingsForm.invalid ||
+      deviceIds.length === 0 ||
+      !this.isOperationRateValid(
+        drillingOperation,
+        depthChangeRateMetresPerHour
+      )
+    ) {
       this.settingsForm.markAllAsTouched();
       this.updateStatus.set('error');
-      this.updateMessage.set('Provide at least one device and a valid interval.');
+      this.updateMessage.set(
+        'Provide valid devices, interval, operation and signed depth-change rate.'
+      );
       return;
     }
 
@@ -108,7 +145,9 @@ export class SimulationControl {
       .updateSettings({
         deviceIds,
         publishingIntervalMilliseconds:
-          this.settingsForm.controls.publishingIntervalMilliseconds.value
+          this.settingsForm.controls.publishingIntervalMilliseconds.value,
+        drillingOperation,
+        depthChangeRateMetresPerHour
       })
       .pipe(
         finalize(() => {
@@ -138,6 +177,26 @@ export class SimulationControl {
         .map(deviceId => deviceId.trim())
         .filter(deviceId => deviceId.length > 0)
     )];
+  }
+
+  private isOperationRateValid(
+    drillingOperation: DrillingOperation,
+    depthChangeRateMetresPerHour: number
+  ): boolean {
+    if (!Number.isFinite(depthChangeRateMetresPerHour)) {
+      return false;
+    }
+
+    switch (drillingOperation) {
+      case DrillingOperation.DrillingAhead:
+        return depthChangeRateMetresPerHour > 0;
+      case DrillingOperation.Stationary:
+        return depthChangeRateMetresPerHour === 0;
+      case DrillingOperation.TrippingOut:
+        return depthChangeRateMetresPerHour < 0;
+      default:
+        return false;
+    }
   }
 
   private getErrorMessage(error: HttpErrorResponse): string {

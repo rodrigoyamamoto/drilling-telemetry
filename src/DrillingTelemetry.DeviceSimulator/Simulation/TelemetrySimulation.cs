@@ -63,19 +63,22 @@ internal sealed class TelemetrySimulation
     /// <summary>
     /// Generates and publishes one telemetry reading for each device.
     /// </summary>
-    /// <param name="deviceIds">
-    /// Identifiers of the devices included in the cycle.
+    /// <param name="settings">
+    /// Immutable settings snapshot applied to the complete cycle.
     /// </param>
     /// <param name="cancellationToken">
     /// Token used to cancel the publishing operation.
     /// </param>
     public async Task PublishCycleAsync(
-        IReadOnlyList<string> deviceIds,
+        SimulationSettings settings,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(deviceIds);
+        ArgumentNullException.ThrowIfNull(settings);
 
-        foreach (string deviceId in deviceIds)
+        double measuredDepthMetres =
+            _drillingContext.MeasuredDepthMetres;
+
+        foreach (string deviceId in settings.DeviceIds)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -84,8 +87,10 @@ internal sealed class TelemetrySimulation
             reading.SequenceNumber = GetNextSequenceNumber(deviceId);
             reading.WellId = _drillingContext.WellId;
             reading.WellboreId = _drillingContext.WellboreId;
-            reading.MeasuredDepthMetres =
-                _drillingContext.MeasuredDepthMetres;
+            reading.MeasuredDepthMetres = measuredDepthMetres;
+            reading.DrillingOperation = settings.DrillingOperation;
+            reading.DepthChangeRateMetresPerHour =
+                settings.DepthChangeRateMetresPerHour;
 
             await _readingPublisher.PublishAsync(reading, cancellationToken);
         }
@@ -119,8 +124,16 @@ internal sealed class TelemetrySimulation
         {
             SimulationSettings settings = _settingsState.Current;
 
-            await PublishCycleAsync(settings.DeviceIds, cancellationToken);
-            await WaitForNextCycleAsync(settings, cancellationToken);
+            await PublishCycleAsync(settings, cancellationToken);
+
+            TimeSpan elapsed = await WaitForNextCycleAsync(
+                settings,
+                cancellationToken);
+
+            _drillingContext.Advance(
+                settings.DrillingOperation,
+                settings.DepthChangeRateMetresPerHour,
+                elapsed);
         }
     }
 
@@ -133,10 +146,15 @@ internal sealed class TelemetrySimulation
     /// <param name="cancellationToken">
     /// Token used to stop the simulation.
     /// </param>
-    private async Task WaitForNextCycleAsync(
+    /// <returns>
+    /// Actual time elapsed before the interval completed or settings changed.
+    /// </returns>
+    private async Task<TimeSpan> WaitForNextCycleAsync(
         SimulationSettings settings,
         CancellationToken cancellationToken)
     {
+        long startedAtTimestamp = _timeProvider.GetTimestamp();
+
         using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         var delayTask = Task.Delay(settings.PublishingInterval, _timeProvider, waitCancellation.Token);
@@ -159,5 +177,7 @@ internal sealed class TelemetrySimulation
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+
+        return _timeProvider.GetElapsedTime(startedAtTimestamp);
     }
 }

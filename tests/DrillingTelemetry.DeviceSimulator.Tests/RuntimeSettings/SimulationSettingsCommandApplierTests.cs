@@ -1,3 +1,4 @@
+using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Contracts.Commands;
 using DrillingTelemetry.DeviceSimulator.RuntimeSettings;
 using DrillingTelemetry.DeviceSimulator.Simulation;
@@ -31,7 +32,9 @@ public sealed class SimulationSettingsCommandApplierTests
         var initialSettings = new SimulationSettings(
             revision: 1,
             deviceIds: initialDeviceIds,
-            publishingInterval: TimeSpan.FromSeconds(2));
+            publishingInterval: TimeSpan.FromSeconds(2),
+            DrillingOperation.Stationary,
+            depthChangeRateMetresPerHour: 0);
 
         var settingsState =
             new SimulationSettingsState(initialSettings);
@@ -43,7 +46,9 @@ public sealed class SimulationSettingsCommandApplierTests
         {
             Revision = 2,
             DeviceIds = updatedDeviceIds,
-            PublishingIntervalMilliseconds = 500
+            PublishingIntervalMilliseconds = 500,
+            DrillingOperation = DrillingOperation.DrillingAhead,
+            DepthChangeRateMetresPerHour = 18
         };
 
         // Act
@@ -67,5 +72,13 @@ public sealed class SimulationSettingsCommandApplierTests
             TimeSpan.FromMilliseconds(
                 command.PublishingIntervalMilliseconds),
             currentSettings.PublishingInterval);
+
+        Assert.Equal(
+            command.DrillingOperation,
+            currentSettings.DrillingOperation);
+
+        Assert.Equal(
+            command.DepthChangeRateMetresPerHour,
+            currentSettings.DepthChangeRateMetresPerHour);
     }
 }

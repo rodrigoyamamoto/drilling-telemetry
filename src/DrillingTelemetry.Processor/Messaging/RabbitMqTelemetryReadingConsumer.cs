@@ -459,10 +459,27 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 "The telemetry wellbore identifier is empty.");
         }
 
-        if (reading.MeasuredDepthMetres < 0)
+        if (!double.IsFinite(reading.MeasuredDepthMetres) ||
+            reading.MeasuredDepthMetres < 0)
         {
             throw new JsonException(
-                "The telemetry measured depth must not be negative.");
+                "The telemetry measured depth must be finite and not " +
+                "negative.");
+        }
+
+        if (!Enum.IsDefined(reading.DrillingOperation))
+        {
+            throw new JsonException(
+                "The telemetry drilling operation is invalid.");
+        }
+
+        if (!DrillingOperationValidation.IsValid(
+                reading.DrillingOperation,
+                reading.DepthChangeRateMetresPerHour))
+        {
+            throw new JsonException(
+                "The telemetry drilling operation and depth-change rate " +
+                "are inconsistent.");
         }
 
         return reading;

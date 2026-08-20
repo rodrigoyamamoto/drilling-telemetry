@@ -8,5 +8,7 @@ Content-Type: application/json
     "DRILL-101",
     "DRILL-102"
   ],
-  "publishingIntervalMilliseconds": 500
+  "publishingIntervalMilliseconds": 500,
+  "drillingOperation": "DrillingAhead",
+  "depthChangeRateMetresPerHour": 18
 }

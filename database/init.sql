@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
     well_id              text             NOT NULL,
     wellbore_id          text             NOT NULL,
     measured_depth_metres double precision NOT NULL,
+    drilling_operation   text             NOT NULL,
+    depth_change_rate_metres_per_hour double precision NOT NULL,
     pressure_psi         double precision NOT NULL,
     temperature_celsius  double precision NOT NULL,
     timestamp_utc        timestamp with time zone NOT NULL,
@@ -24,7 +26,38 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
         CHECK (sequence_number > 0),
 
     CONSTRAINT ck_telemetry_readings_measured_depth
-        CHECK (measured_depth_metres >= 0)
+        CHECK
+        (
+            measured_depth_metres >= 0
+            AND measured_depth_metres < 'Infinity'::double precision
+        ),
+
+    CONSTRAINT ck_telemetry_readings_drilling_operation
+        CHECK
+        (
+            drilling_operation IN
+            (
+                'Stationary',
+                'DrillingAhead',
+                'TrippingOut'
+            )
+        ),
+
+    CONSTRAINT ck_telemetry_readings_depth_change_rate
+        CHECK
+        (
+            depth_change_rate_metres_per_hour >
+                '-Infinity'::double precision
+            AND depth_change_rate_metres_per_hour <
+                'Infinity'::double precision
+            AND
+            ((drilling_operation = 'Stationary'
+                AND depth_change_rate_metres_per_hour = 0)
+            OR (drilling_operation = 'DrillingAhead'
+                AND depth_change_rate_metres_per_hour > 0)
+            OR (drilling_operation = 'TrippingOut'
+                AND depth_change_rate_metres_per_hour < 0))
+        )
 );
 
 CREATE INDEX IF NOT EXISTS ix_telemetry_readings_device_timestamp

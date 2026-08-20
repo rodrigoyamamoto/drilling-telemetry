@@ -19,4 +19,14 @@ public sealed class UpdateSimulationSettingsCommand
     /// Gets or sets the interval between publishing cycles, in milliseconds.
     /// </summary>
     public int PublishingIntervalMilliseconds { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current drilling operation.
+    /// </summary>
+    public DrillingOperation DrillingOperation { get; set; }
+
+    /// <summary>
+    /// Gets or sets the signed measured-depth change rate, in metres per hour.
+    /// </summary>
+    public double DepthChangeRateMetresPerHour { get; set; }
 }

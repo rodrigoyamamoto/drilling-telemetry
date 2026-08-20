@@ -47,11 +47,14 @@ public sealed class TelemetrySimulationTests
 
         var readingPublisher = new RecordingTelemetryReadingPublisher();
 
-        var settingsState = new SimulationSettingsState(
-            new SimulationSettings(
-                revision: 1,
-                deviceIds,
-                publishingInterval: TimeSpan.FromSeconds(1)));
+        var settings = new SimulationSettings(
+            revision: 1,
+            deviceIds,
+            publishingInterval: TimeSpan.FromSeconds(1),
+            DrillingOperation.Stationary,
+            depthChangeRateMetresPerHour: 0);
+
+        var settingsState = new SimulationSettingsState(settings);
         
         var simulation = new TelemetrySimulation(
             readingGenerator,
@@ -62,7 +65,7 @@ public sealed class TelemetrySimulationTests
 
         // Act
         await simulation.PublishCycleAsync(
-            deviceIds,
+            settings,
             CancellationToken.None);
 
         // Assert
@@ -143,7 +146,9 @@ public sealed class TelemetrySimulationTests
             new SimulationSettings(
                 revision: 1,
                 deviceIds,
-                publishingInterval));
+                publishingInterval,
+                DrillingOperation.Stationary,
+                depthChangeRateMetresPerHour: 0));
         
         var simulation = new TelemetrySimulation(
             readingGenerator,
@@ -245,12 +250,16 @@ public sealed class TelemetrySimulationTests
         var initialSettings = new SimulationSettings(
             revision: 1,
             deviceIds: initialDeviceIds,
-            publishingInterval: TimeSpan.FromSeconds(30));
+            publishingInterval: TimeSpan.FromSeconds(30),
+            DrillingOperation.Stationary,
+            depthChangeRateMetresPerHour: 0);
 
         var updatedSettings = new SimulationSettings(
             revision: 2,
             deviceIds: updatedDeviceIds,
-            publishingInterval: TimeSpan.FromMilliseconds(500));
+            publishingInterval: TimeSpan.FromMilliseconds(500),
+            DrillingOperation.Stationary,
+            depthChangeRateMetresPerHour: 0);
 
         var settingsState =
             new SimulationSettingsState(initialSettings);

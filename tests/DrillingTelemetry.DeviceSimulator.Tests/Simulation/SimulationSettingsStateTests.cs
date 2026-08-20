@@ -1,3 +1,4 @@
+using DrillingTelemetry.Contracts;
 using DrillingTelemetry.DeviceSimulator.Simulation;
 
 namespace DrillingTelemetry.DeviceSimulator.Tests.Simulation;
@@ -106,6 +107,8 @@ public sealed class SimulationSettingsStateTests
         return new SimulationSettings(
             revision,
             [deviceId],
-            TimeSpan.FromSeconds(1));
+            TimeSpan.FromSeconds(1),
+            DrillingOperation.Stationary,
+            depthChangeRateMetresPerHour: 0);
     }
 }

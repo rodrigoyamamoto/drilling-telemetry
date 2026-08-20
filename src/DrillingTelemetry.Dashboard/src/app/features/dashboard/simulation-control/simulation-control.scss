@@ -5,7 +5,9 @@
 
 .control-footer,
 .range-field > span,
-.device-field > span {
+.device-field > span,
+.select-field > span,
+.number-field > span {
   display: flex;
   align-items: center;
 }
@@ -21,27 +23,63 @@
 }
 
 .range-field,
-.device-field {
+.device-field,
+.select-field,
+.number-field {
   display: block;
   margin-top: 1.25rem;
 }
 
 .range-field > span,
-.device-field > span {
+.device-field > span,
+.select-field > span,
+.number-field > span {
   justify-content: space-between;
   gap: 1rem;
 }
 
 .range-field > span strong,
-.device-field > span strong {
+.device-field > span strong,
+.select-field > span strong,
+.number-field > span strong {
   color: var(--muted);
   font-size: 0.68rem;
 }
 
 .device-field small,
-.field-hint {
+.field-hint,
+.number-field small {
   color: var(--subtle);
   font-size: 0.58rem;
+}
+
+.operation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.8rem;
+}
+
+.select-field select,
+.number-field input {
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.55rem;
+  background: rgba(4, 13, 20, 0.58);
+  color: var(--text);
+  font-size: 0.68rem;
+}
+
+.select-field select:hover,
+.select-field select:focus,
+.number-field input:hover,
+.number-field input:focus {
+  border-color: rgba(50, 214, 208, 0.5);
+}
+
+.operation-hint {
+  line-height: 1.5;
 }
 
 .device-field textarea {
@@ -134,6 +172,10 @@
 }
 
 @media (max-width: 48rem) {
+  .operation-grid {
+    grid-template-columns: 1fr;
+  }
+
   .control-footer {
     align-items: flex-start;
     flex-direction: column;

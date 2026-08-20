@@ -14,4 +14,8 @@ ALTER TABLE telemetry_readings
     ALTER COLUMN wellbore_id SET NOT NULL,
     ALTER COLUMN measured_depth_metres SET NOT NULL,
     ADD CONSTRAINT ck_telemetry_readings_measured_depth
-        CHECK (measured_depth_metres >= 0);
+        CHECK
+        (
+            measured_depth_metres >= 0
+            AND measured_depth_metres < 'Infinity'::double precision
+        );

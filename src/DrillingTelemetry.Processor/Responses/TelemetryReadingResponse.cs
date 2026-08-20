@@ -1,3 +1,5 @@
+using DrillingTelemetry.Contracts;
+
 namespace DrillingTelemetry.Processor.Responses;
 
 /// <summary>
@@ -17,6 +19,12 @@ namespace DrillingTelemetry.Processor.Responses;
 /// <param name="MeasuredDepthMetres">
 /// Distance travelled along the wellbore, in metres.
 /// </param>
+/// <param name="DrillingOperation">
+/// Operation active when the reading was acquired.
+/// </param>
+/// <param name="DepthChangeRateMetresPerHour">
+/// Signed measured-depth change rate, in metres per hour.
+/// </param>
 /// <param name="PressurePsi">
 /// Pressure in pounds per square inch.
 /// </param>
@@ -31,6 +39,8 @@ public sealed record TelemetryReadingResponse(
     string WellId,
     string WellboreId,
     double MeasuredDepthMetres,
+    DrillingOperation DrillingOperation,
+    double DepthChangeRateMetresPerHour,
     double PressurePsi,
     double TemperatureCelsius,
     DateTimeOffset TimestampUtc);

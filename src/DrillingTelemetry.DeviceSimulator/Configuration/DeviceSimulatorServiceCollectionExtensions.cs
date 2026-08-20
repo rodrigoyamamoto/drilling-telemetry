@@ -73,8 +73,22 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                 "A wellbore identifier must be configured.")
             .Validate(
                 options =>
+                    double.IsFinite(
+                        options.InitialMeasuredDepthMetres) &&
                     options.InitialMeasuredDepthMetres >= 0,
-                "Initial measured depth must not be negative.")
+                "Initial measured depth must be finite and not negative.")
+            .Validate(
+                options =>
+                    Enum.IsDefined(options.DrillingOperation),
+                "Drilling operation is invalid.")
+            .Validate(
+                options =>
+                    DrillingOperationValidation.IsValid(
+                        options.DrillingOperation,
+                        options.DepthChangeRateMetresPerHour),
+                "Drilling ahead requires a positive depth-change rate, " +
+                "stationary requires zero, and tripping out requires a " +
+                "negative rate.")
             .Validate(
                 options =>
                     Enum.IsDefined(options.GenerationMode),
@@ -129,7 +143,9 @@ internal static class DeviceSimulatorServiceCollectionExtensions
             InitialSettingsRevision,
             options.DeviceIds,
             TimeSpan.FromMilliseconds(
-                options.PublishingIntervalMilliseconds));
+                options.PublishingIntervalMilliseconds),
+            options.DrillingOperation,
+            options.DepthChangeRateMetresPerHour);
 
         return new SimulationSettingsState(initialSettings);
     }

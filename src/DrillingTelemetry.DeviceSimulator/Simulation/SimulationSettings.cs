@@ -19,10 +19,18 @@ internal sealed class SimulationSettings
     /// <param name="publishingInterval">
     /// Time waited between publishing cycles.
     /// </param>
+    /// <param name="drillingOperation">
+    /// Drilling operation applied between publishing cycles.
+    /// </param>
+    /// <param name="depthChangeRateMetresPerHour">
+    /// Signed measured-depth change rate, in metres per hour.
+    /// </param>
     public SimulationSettings(
         long revision,
         IReadOnlyList<string> deviceIds,
-        TimeSpan publishingInterval)
+        TimeSpan publishingInterval,
+        DrillingOperation drillingOperation,
+        double depthChangeRateMetresPerHour)
     {
         ArgumentNullException.ThrowIfNull(deviceIds);
 
@@ -63,9 +71,30 @@ internal sealed class SimulationSettings
                 "milliseconds.");
         }
 
+        if (!Enum.IsDefined(drillingOperation))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(drillingOperation),
+                drillingOperation,
+                "The drilling operation is invalid.");
+        }
+
+        if (!DrillingOperationValidation.IsValid(
+                drillingOperation,
+                depthChangeRateMetresPerHour))
+        {
+            throw new ArgumentException(
+                "Drilling ahead requires a positive depth-change rate, " +
+                "stationary requires zero, and tripping out requires a " +
+                "negative rate.",
+                nameof(depthChangeRateMetresPerHour));
+        }
+
         Revision = revision;
         DeviceIds = Array.AsReadOnly(deviceIds.ToArray());
         PublishingInterval = publishingInterval;
+        DrillingOperation = drillingOperation;
+        DepthChangeRateMetresPerHour = depthChangeRateMetresPerHour;
     }
 
     /// <summary>
@@ -82,4 +111,14 @@ internal sealed class SimulationSettings
     /// Gets the time waited between publishing cycles.
     /// </summary>
     public TimeSpan PublishingInterval { get; }
+
+    /// <summary>
+    /// Gets the drilling operation applied between publishing cycles.
+    /// </summary>
+    public DrillingOperation DrillingOperation { get; }
+
+    /// <summary>
+    /// Gets the signed measured-depth change rate, in metres per hour.
+    /// </summary>
+    public double DepthChangeRateMetresPerHour { get; }
 }

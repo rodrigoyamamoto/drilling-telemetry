@@ -36,6 +36,17 @@ public sealed class TelemetryReading
     public double MeasuredDepthMetres { get; set; }
 
     /// <summary>
+    /// Gets or sets the operation that governed measured-depth movement when
+    /// the reading was acquired.
+    /// </summary>
+    public DrillingOperation DrillingOperation { get; set; }
+
+    /// <summary>
+    /// Gets or sets the signed measured-depth change rate, in metres per hour.
+    /// </summary>
+    public double DepthChangeRateMetresPerHour { get; set; }
+
+    /// <summary>
     /// Gets or sets the pressure in pounds per square inch.
     /// </summary>
     public double PressurePsi { get; set; }

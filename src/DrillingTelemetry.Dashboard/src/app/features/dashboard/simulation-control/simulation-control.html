@@ -23,6 +23,43 @@
       The next accepted update replaces the simulator device list.
     </span>
 
+    <div class="operation-grid">
+      <label class="select-field" for="drilling-operation">
+        <span><strong>Operation</strong></span>
+        <select id="drilling-operation" formControlName="drillingOperation">
+          @for (drillingOperation of drillingOperations; track drillingOperation.value) {
+            <option [ngValue]="drillingOperation.value">
+              {{ drillingOperation.label }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label class="number-field" for="depth-change-rate">
+        <span><strong>Depth-change rate</strong><small>m/h</small></span>
+        <input
+          id="depth-change-rate"
+          type="number"
+          formControlName="depthChangeRateMetresPerHour"
+          step="1"
+        />
+      </label>
+    </div>
+
+    <span class="field-hint operation-hint">
+      @switch (settingsForm.controls.drillingOperation.value) {
+        @case (operation.DrillingAhead) {
+          Use a positive rate while measured depth is increasing.
+        }
+        @case (operation.Stationary) {
+          Use zero while the assembly remains at the current depth.
+        }
+        @case (operation.TrippingOut) {
+          Use a negative rate while measured depth is decreasing.
+        }
+      }
+    </span>
+
     <label class="range-field" for="publishing-interval">
       <span>
         <strong>Publishing interval</strong>

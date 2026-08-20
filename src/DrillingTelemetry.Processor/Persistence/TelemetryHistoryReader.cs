@@ -26,6 +26,8 @@ internal sealed class TelemetryHistoryReader
             well_id AS "WellId",
             wellbore_id AS "WellboreId",
             measured_depth_metres AS "MeasuredDepthMetres",
+            drilling_operation AS "DrillingOperation",
+            depth_change_rate_metres_per_hour AS "DepthChangeRateMetresPerHour",
             pressure_psi AS "PressurePsi",
             temperature_celsius AS "TemperatureCelsius",
             timestamp_utc AS "TimestampUtc"
@@ -38,6 +40,8 @@ internal sealed class TelemetryHistoryReader
                 well_id,
                 wellbore_id,
                 measured_depth_metres,
+                drilling_operation,
+                depth_change_rate_metres_per_hour,
                 pressure_psi,
                 temperature_celsius,
                 timestamp_utc

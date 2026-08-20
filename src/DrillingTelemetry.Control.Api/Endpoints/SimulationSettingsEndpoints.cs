@@ -41,7 +41,7 @@ internal static class SimulationSettingsEndpoints
         return group;
     }
 
-    private async static Task<Results<Accepted<UpdateSimulationSettingsResponse>, ValidationProblem>>
+    private static async Task<Results<Accepted<UpdateSimulationSettingsResponse>, ValidationProblem>>
         UpdateSettingsAsync(
             UpdateSimulationSettingsRequest request,
             ISimulationSettingsRevisionProvider revisionProvider,
@@ -59,7 +59,10 @@ internal static class SimulationSettingsEndpoints
             Revision = revision,
             DeviceIds = request.DeviceIds,
             PublishingIntervalMilliseconds =
-                request.PublishingIntervalMilliseconds
+                request.PublishingIntervalMilliseconds,
+            DrillingOperation = request.DrillingOperation,
+            DepthChangeRateMetresPerHour =
+                request.DepthChangeRateMetresPerHour
         };
 
         await publisher.PublishAsync(

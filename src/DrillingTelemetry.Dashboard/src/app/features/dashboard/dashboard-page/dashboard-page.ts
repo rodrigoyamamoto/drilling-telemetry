@@ -14,6 +14,7 @@ import type { Observable } from 'rxjs';
 
 import type { OperationalEvent } from '../data-access/operational-event';
 import { OperationalEventsService } from '../data-access/operational-events.service';
+import { DrillingOperation } from '../data-access/simulation-settings';
 import { TelemetryHistoryService } from '../data-access/telemetry-history.service';
 import type { TelemetryMetrics } from '../data-access/telemetry-metrics';
 import type { TelemetryReading } from '../data-access/telemetry-reading';
@@ -120,6 +121,20 @@ export class DashboardPage {
     return wellId
       ? wellId.replaceAll(/[^a-zA-Z0-9]/g, '').slice(-2).toUpperCase()
       : '—';
+  });
+
+  /** Human-readable operation received with the latest reading. */
+  protected readonly drillingOperationLabel = computed(() => {
+    switch (this.latestReading()?.drillingOperation) {
+      case DrillingOperation.Stationary:
+        return 'Stationary';
+      case DrillingOperation.DrillingAhead:
+        return 'Drilling ahead';
+      case DrillingOperation.TrippingOut:
+        return 'Tripping out';
+      default:
+        return '—';
+    }
   });
 
   /** Short label describing the historical reading state. */

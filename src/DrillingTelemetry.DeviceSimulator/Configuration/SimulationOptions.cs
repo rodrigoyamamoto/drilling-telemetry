@@ -1,3 +1,4 @@
+using DrillingTelemetry.Contracts;
 using DrillingTelemetry.DeviceSimulator.Generation;
 
 namespace DrillingTelemetry.DeviceSimulator.Configuration;
@@ -42,6 +43,17 @@ internal sealed class SimulationOptions
     /// Gets or sets the initial measured depth, in metres.
     /// </summary>
     public double InitialMeasuredDepthMetres { get; set; }
+
+    /// <summary>
+    /// Gets or sets the initial drilling operation.
+    /// </summary>
+    public DrillingOperation DrillingOperation { get; set; }
+
+    /// <summary>
+    /// Gets or sets the initial signed measured-depth change rate, in metres
+    /// per hour.
+    /// </summary>
+    public double DepthChangeRateMetresPerHour { get; set; }
 
     /// <summary>
     /// Gets or sets the pressure used by fixed generation.

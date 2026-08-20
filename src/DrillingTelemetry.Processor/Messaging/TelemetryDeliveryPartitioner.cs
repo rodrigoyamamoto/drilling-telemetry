@@ -102,7 +102,7 @@ internal sealed class TelemetryDeliveryPartitioner
         return (int)((uint)streamHash % (uint)_partitions.Length);
     }
 
-    private async static Task ProcessPartitionAsync(
+    private static async Task ProcessPartitionAsync(
         ChannelReader<TelemetryDelivery> reader,
         Func<TelemetryDelivery, CancellationToken, Task> handler,
         CancellationToken cancellationToken)

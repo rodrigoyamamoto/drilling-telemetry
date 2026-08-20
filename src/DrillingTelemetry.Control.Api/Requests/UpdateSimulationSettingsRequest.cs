@@ -26,6 +26,16 @@ public sealed record UpdateSimulationSettingsRequest : IValidatableObject
     public int PublishingIntervalMilliseconds { get; init; }
 
     /// <summary>
+    /// Gets the drilling operation applied between publishing cycles.
+    /// </summary>
+    public DrillingOperation DrillingOperation { get; init; }
+
+    /// <summary>
+    /// Gets the signed measured-depth change rate, in metres per hour.
+    /// </summary>
+    public double DepthChangeRateMetresPerHour { get; init; }
+
+    /// <summary>
     /// Validates rules that depend on the request contents.
     /// </summary>
     /// <param name="validationContext">
@@ -44,6 +54,29 @@ public sealed record UpdateSimulationSettingsRequest : IValidatableObject
             yield return new ValidationResult(
                 "Device identifiers must not be empty.",
                 [nameof(DeviceIds)]);
+        }
+
+        if (!Enum.IsDefined(DrillingOperation))
+        {
+            yield return new ValidationResult(
+                "Drilling operation is invalid.",
+                [nameof(DrillingOperation)]);
+
+            yield break;
+        }
+
+        if (!DrillingOperationValidation.IsValid(
+                DrillingOperation,
+                DepthChangeRateMetresPerHour))
+        {
+            yield return new ValidationResult(
+                "Drilling ahead requires a positive depth-change rate, " +
+                "stationary requires zero, and tripping out requires a " +
+                "negative rate.",
+                [
+                    nameof(DrillingOperation),
+                    nameof(DepthChangeRateMetresPerHour)
+                ]);
         }
     }
 }

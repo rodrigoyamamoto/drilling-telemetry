@@ -149,10 +149,14 @@ internal sealed class RabbitMqSimulationSettingsConsumer
             _logger.LogInformation(
                 "Simulation settings revision {Revision} applied: " +
                 "{DeviceCount} devices, " +
-                "{PublishingIntervalMilliseconds} ms interval",
+                "{PublishingIntervalMilliseconds} ms interval, " +
+                "{DrillingOperation} at " +
+                "{DepthChangeRateMetresPerHour} m/h",
                 command.Revision,
                 command.DeviceIds.Length,
-                command.PublishingIntervalMilliseconds);
+                command.PublishingIntervalMilliseconds,
+                command.DrillingOperation,
+                command.DepthChangeRateMetresPerHour);
         }
         catch (Exception exception)
             when (exception is JsonException or ArgumentException)

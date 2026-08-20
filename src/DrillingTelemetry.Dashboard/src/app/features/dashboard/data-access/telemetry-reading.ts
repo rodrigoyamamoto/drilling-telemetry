@@ -1,3 +1,5 @@
+import type { DrillingOperation } from './simulation-settings';
+
 /** Persisted telemetry reading returned by the Processor API. */
 export interface TelemetryReading {
   /** Identifier of the telemetry device. */
@@ -17,6 +19,12 @@ export interface TelemetryReading {
 
   /** Distance travelled along the wellbore, in metres. */
   readonly measuredDepthMetres: number;
+
+  /** Operation active when the reading was acquired. */
+  readonly drillingOperation: DrillingOperation;
+
+  /** Signed measured-depth change rate, in metres per hour. */
+  readonly depthChangeRateMetresPerHour: number;
 
   /** Pressure in pounds per square inch. */
   readonly pressurePsi: number;
