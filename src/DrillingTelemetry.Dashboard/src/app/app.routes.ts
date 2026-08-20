@@ -1,12 +1,12 @@
-import { Routes } from '@angular/router';
-
-import { DashboardPage } from './features/dashboard/dashboard-page/dashboard-page';
+import type { Routes } from '@angular/router';
 
 /** Routes available in the drilling telemetry dashboard. */
 export const routes: Routes = [
   {
     path: '',
-    component: DashboardPage,
+    loadComponent: () => import(
+      './features/dashboard/dashboard-page/dashboard-page'
+    ).then(module => module.DashboardPage),
     title: 'Drilling Telemetry'
   }
 ];

@@ -1,7 +1,7 @@
 <article class="panel telemetry-panel">
   <div class="panel-header">
     <div>
-      <p class="section-kicker">Persisted history</p>
+      <p class="section-kicker">Telemetry window</p>
       <h2>Pressure &amp; temperature</h2>
     </div>
 
@@ -60,7 +60,7 @@
   </div>
 
   <footer class="chart-footer">
-    <span>Chronological order · oldest to newest</span>
+    <span>Historical baseline + accepted live readings</span>
     @if (latestReading(); as reading) {
       <span>Last sequence · {{ reading.sequenceNumber | number: '1.0-0' }}</span>
       <span>{{ reading.timestampUtc | date: 'dd MMM yyyy, HH:mm:ss' : 'UTC' }} UTC</span>

@@ -7,9 +7,13 @@
 
     <div class="topbar__status">
       <span class="environment-badge">North Sea · Demo rig</span>
-      <span class="history-badge">
-        <span class="history-badge__marker" aria-hidden="true"></span>
-        Historical
+      <span
+        class="connection-badge"
+        [class.connection-badge--connected]="liveConnectionStatus() === 'connected'"
+        [class.connection-badge--reconnecting]="liveConnectionStatus() === 'reconnecting'"
+      >
+        <span class="connection-badge__marker" aria-hidden="true"></span>
+        {{ liveConnectionLabel() }}
       </span>
       @if (latestReading(); as reading) {
         <span class="last-update">
@@ -112,10 +116,10 @@
 
   <section class="main-grid">
     <app-telemetry-chart
-      [readings]="readingState().readings"
+      [readings]="displayedReadings()"
       [selectedDeviceId]="selectedDeviceId()"
-      [isLoading]="readingState().status === 'loading'"
-      [errorMessage]="readingState().errorMessage"
+      [isLoading]="readingState().status === 'loading' && displayedReadings().length === 0"
+      [errorMessage]="displayedReadings().length === 0 ? readingState().errorMessage : null"
     />
     <app-device-list
       [deviceIds]="deviceIds()"
