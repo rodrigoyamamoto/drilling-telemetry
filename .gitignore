@@ -12,3 +12,6 @@ riderModule.iml
 
 # Local environment variables
 .env
+
+# Generated load and recovery test evidence
+artifacts/

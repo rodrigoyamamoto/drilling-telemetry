@@ -34,12 +34,13 @@ internal sealed class RabbitMqOptions
         string.Empty;
 
     /// <summary>
-    /// Gets or sets the maximum number of unacknowledged telemetry readings per consumer.
+    /// Gets or sets the maximum number of pending telemetry readings per
+    /// processing partition.
     /// </summary>
     public ushort TelemetryPrefetchCount { get; set; }
 
     /// <summary>
-    /// Gets or sets the number of concurrent telemetry consumers.
+    /// Gets or sets the number of concurrent telemetry processing partitions.
     /// </summary>
-    public int TelemetryConsumerCount { get; set; }
+    public int TelemetryProcessingPartitionCount { get; set; }
 }

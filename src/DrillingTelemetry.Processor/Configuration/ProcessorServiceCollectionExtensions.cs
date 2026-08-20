@@ -74,8 +74,14 @@ internal static class ProcessorServiceCollectionExtensions
                 "RabbitMQ telemetry prefetch count must be greater than zero.")
             .Validate(
                 options =>
-                    options.TelemetryConsumerCount > 0,
-                "RabbitMQ telemetry consumer count must be greater than zero.")
+                    options.TelemetryProcessingPartitionCount > 0,
+                "Telemetry processing partition count must be greater than zero.")
+            .Validate(
+                options =>
+                    (uint)options.TelemetryPrefetchCount *
+                    (uint)options.TelemetryProcessingPartitionCount <=
+                    ushort.MaxValue,
+                "The total RabbitMQ prefetch count exceeds its supported range.")
             .ValidateOnStart();
 
         services

@@ -11,11 +11,14 @@ using RabbitMQ.Client.Events;
 namespace DrillingTelemetry.Processor.Messaging;
 
 /// <summary>
-/// Consumes and processes telemetry readings from RabbitMQ.
+/// Consumes telemetry readings from RabbitMQ and preserves ordering within
+/// each telemetry stream while processing independent streams concurrently.
 /// </summary>
 internal sealed class RabbitMqTelemetryReadingConsumer
     : BackgroundService
 {
+    private const ushort OrderedConsumerDispatchConcurrency = 1;
+
     private const string DeadLetterExchangeArgument =
         "x-dead-letter-exchange";
 
@@ -79,7 +82,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     {
         var connectionFactory = new ConnectionFactory
         {
-            HostName = _rabbitMqOptions.HostName
+            HostName = _rabbitMqOptions.HostName,
+            ConsumerDispatchConcurrency =
+                OrderedConsumerDispatchConcurrency
         };
 
         await using IConnection connection =
@@ -90,18 +95,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             connection,
             stoppingToken);
 
-        Task[] consumerTasks = Enumerable
-            .Range(
-                start: 1,
-                count: _rabbitMqOptions.TelemetryConsumerCount)
-            .Select(consumerNumber =>
-                RunConsumerAsync(
-                    connection,
-                    consumerNumber,
-                    stoppingToken))
-            .ToArray();
-
-        await Task.WhenAll(consumerTasks);
+        await RunPartitionedConsumerAsync(
+            connection,
+            stoppingToken);
     }
 
     /// <summary>
@@ -165,36 +161,67 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     }
 
     /// <summary>
-    /// Runs one sequential telemetry consumer on its own RabbitMQ channel.
+    /// Receives ordered deliveries on one RabbitMQ channel and dispatches them
+    /// to processing partitions selected by telemetry stream.
     /// </summary>
     /// <param name="connection">
     /// Shared RabbitMQ connection used to create the consumer channel.
     /// </param>
-    /// <param name="consumerNumber">
-    /// Consumer number used to identify the worker in logs.
-    /// </param>
     /// <param name="stoppingToken">
     /// Token used to stop the consumer gracefully.
     /// </param>
-    private async Task RunConsumerAsync(
+    private async Task RunPartitionedConsumerAsync(
         IConnection connection,
-        int consumerNumber,
         CancellationToken stoppingToken)
     {
+        int partitionCount =
+            _rabbitMqOptions.TelemetryProcessingPartitionCount;
+
+        ushort totalPrefetchCount = checked((ushort)(
+            _rabbitMqOptions.TelemetryPrefetchCount *
+            partitionCount));
+
         await using IChannel channel =
             await connection.CreateChannelAsync(
                 cancellationToken: stoppingToken);
 
         await channel.BasicQosAsync(
             prefetchSize: 0,
-            prefetchCount:
-                _rabbitMqOptions.TelemetryPrefetchCount,
+            prefetchCount: totalPrefetchCount,
             global: false,
             cancellationToken: stoppingToken);
 
+        using var channelGate = new SemaphoreSlim(
+            initialCount: 1,
+            maxCount: 1);
+
+        var partitioner = new TelemetryDeliveryPartitioner(
+            partitionCount,
+            _rabbitMqOptions.TelemetryPrefetchCount);
+
+        Task partitionProcessingTask = partitioner.RunAsync(
+            (delivery, cancellationToken) =>
+                ProcessDeliveryAsync(
+                    delivery,
+                    channel,
+                    channelGate,
+                    cancellationToken),
+            stoppingToken);
+
         var consumer = new AsyncEventingBasicConsumer(channel);
 
-        consumer.ReceivedAsync += HandleReceivedAsync;
+        async Task HandleDeliveryAsync(
+            object sender,
+            BasicDeliverEventArgs eventArgs)
+        {
+            await HandleReceivedAsync(
+                eventArgs,
+                partitioner,
+                channel,
+                channelGate);
+        }
+
+        consumer.ReceivedAsync += HandleDeliveryAsync;
 
         string consumerTag = await channel.BasicConsumeAsync(
             queue: _rabbitMqOptions.TelemetryReadingsQueueName,
@@ -203,12 +230,13 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             cancellationToken: stoppingToken);
 
         _logger.LogInformation(
-            "Telemetry consumer {ConsumerNumber} is waiting for " +
-            "readings from {QueueName} " +
-            "with a prefetch count of {PrefetchCount}",
-            consumerNumber,
+            "Telemetry consumer is waiting for readings from " +
+            "{QueueName} with {PartitionCount} processing " +
+            "partitions and a total prefetch count of " +
+            "{TotalPrefetchCount}",
             _rabbitMqOptions.TelemetryReadingsQueueName,
-            _rabbitMqOptions.TelemetryPrefetchCount);
+            partitionCount,
+            totalPrefetchCount);
 
         try
         {
@@ -223,82 +251,51 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         }
         finally
         {
-            consumer.ReceivedAsync -= HandleReceivedAsync;
+            consumer.ReceivedAsync -= HandleDeliveryAsync;
 
-            await channel.BasicCancelAsync(
-                consumerTag,
-                cancellationToken: CancellationToken.None);
+            await CancelConsumerAsync(
+                channel,
+                channelGate,
+                consumerTag);
+
+            await partitionProcessingTask;
         }
     }
 
     /// <summary>
-    /// Deserialises, processes and acknowledges a telemetry reading.
+    /// Deserialises a delivery and routes valid telemetry to its stream
+    /// partition.
     /// </summary>
-    /// <param name="sender">
-    /// RabbitMQ consumer that received the message.
-    /// </param>
     /// <param name="eventArgs">
     /// RabbitMQ delivery information.
     /// </param>
+    /// <param name="partitioner">
+    /// Routes valid readings to sequential stream partitions.
+    /// </param>
+    /// <param name="channel">
+    /// RabbitMQ channel that delivered the message.
+    /// </param>
+    /// <param name="channelGate">
+    /// Serialises acknowledgement operations on the shared channel.
+    /// </param>
     private async Task HandleReceivedAsync(
-        object sender,
-        BasicDeliverEventArgs eventArgs)
+        BasicDeliverEventArgs eventArgs,
+        TelemetryDeliveryPartitioner partitioner,
+        IChannel channel,
+        SemaphoreSlim channelGate)
     {
-        var eventConsumer =
-            (AsyncEventingBasicConsumer)sender;
-
-        IChannel consumerChannel = eventConsumer.Channel;
-
         try
         {
-            TelemetryReading? reading =
-                JsonSerializer.Deserialize<TelemetryReading>(
-                    eventArgs.Body.Span);
+            TelemetryReading reading =
+                DeserialiseReading(eventArgs);
 
-            if (reading is null)
-            {
-                throw new JsonException(
-                    "The telemetry reading is empty.");
-            }
+            var delivery = new TelemetryDelivery(
+                reading,
+                eventArgs.DeliveryTag);
 
-            if (string.IsNullOrWhiteSpace(reading.DeviceId))
-            {
-                throw new JsonException(
-                    "The telemetry device identifier is empty.");
-            }
-
-            if (reading.AcquisitionSessionId == Guid.Empty)
-            {
-                throw new JsonException(
-                    "The telemetry acquisition session is empty.");
-            }
-
-            if (reading.SequenceNumber <= 0)
-            {
-                throw new JsonException(
-                    "The telemetry sequence number must be greater " +
-                    "than zero.");
-            }
-
-            TelemetryProcessingResult processingResult =
-                await _telemetryReadingProcessor.ProcessAsync(
-                    reading,
-                    eventArgs.CancellationToken);
-
-            if (processingResult == TelemetryProcessingResult.Conflict)
-            {
-                await RejectDeliveryAsync(
-                    consumerChannel,
-                    eventArgs.DeliveryTag,
-                    requeue: false);
-
-                return;
-            }
-
-            await consumerChannel.BasicAckAsync(
-                deliveryTag: eventArgs.DeliveryTag,
-                multiple: false);
-
+            await partitioner.EnqueueAsync(
+                delivery,
+                eventArgs.CancellationToken);
         }
         catch (JsonException exception)
         {
@@ -309,7 +306,8 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 "Invalid telemetry message received");
 
             bool rejected = await RejectDeliveryAsync(
-                consumerChannel,
+                channel,
+                channelGate,
                 eventArgs.DeliveryTag,
                 requeue: false);
 
@@ -331,14 +329,150 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         {
             _logger.LogError(
                 exception,
-                "Unexpected failure processing telemetry delivery " +
+                "Unexpected failure dispatching telemetry delivery " +
                 "{DeliveryTag}",
                 eventArgs.DeliveryTag);
 
             await RejectDeliveryAsync(
-                consumerChannel,
+                channel,
+                channelGate,
                 eventArgs.DeliveryTag,
                 requeue: true);
+        }
+    }
+
+    /// <summary>
+    /// Processes one delivery and acknowledges its final outcome.
+    /// </summary>
+    /// <param name="delivery">Delivery assigned to a stream partition.</param>
+    /// <param name="channel">
+    /// RabbitMQ channel that owns the delivery tag.
+    /// </param>
+    /// <param name="channelGate">
+    /// Serialises acknowledgement operations on the shared channel.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Signals that delivery processing should stop.
+    /// </param>
+    private async Task ProcessDeliveryAsync(
+        TelemetryDelivery delivery,
+        IChannel channel,
+        SemaphoreSlim channelGate,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            TelemetryProcessingResult processingResult =
+                await _telemetryReadingProcessor.ProcessAsync(
+                    delivery.Reading,
+                    cancellationToken);
+
+            if (processingResult == TelemetryProcessingResult.Conflict)
+            {
+                await RejectDeliveryAsync(
+                    channel,
+                    channelGate,
+                    delivery.DeliveryTag,
+                    requeue: false);
+
+                return;
+            }
+
+            await AcknowledgeDeliveryAsync(
+                channel,
+                channelGate,
+                delivery.DeliveryTag);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug(
+                "Telemetry delivery {DeliveryTag} was interrupted " +
+                "during processor shutdown",
+                delivery.DeliveryTag);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Unexpected failure processing telemetry delivery " +
+                "{DeliveryTag}",
+                delivery.DeliveryTag);
+
+            await RejectDeliveryAsync(
+                channel,
+                channelGate,
+                delivery.DeliveryTag,
+                requeue: true);
+        }
+    }
+
+    /// <summary>
+    /// Deserialises and validates the identity of a telemetry reading.
+    /// </summary>
+    /// <param name="eventArgs">RabbitMQ delivery to deserialise.</param>
+    /// <returns>The valid telemetry reading.</returns>
+    /// <exception cref="JsonException">
+    /// Thrown when the payload is empty or has an invalid stream identity.
+    /// </exception>
+    private static TelemetryReading DeserialiseReading(
+        BasicDeliverEventArgs eventArgs)
+    {
+        TelemetryReading? reading =
+            JsonSerializer.Deserialize<TelemetryReading>(
+                eventArgs.Body.Span);
+
+        if (reading is null)
+        {
+            throw new JsonException(
+                "The telemetry reading is empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reading.DeviceId))
+        {
+            throw new JsonException(
+                "The telemetry device identifier is empty.");
+        }
+
+        if (reading.AcquisitionSessionId == Guid.Empty)
+        {
+            throw new JsonException(
+                "The telemetry acquisition session is empty.");
+        }
+
+        if (reading.SequenceNumber <= 0)
+        {
+            throw new JsonException(
+                "The telemetry sequence number must be greater " +
+                "than zero.");
+        }
+
+        return reading;
+    }
+
+    /// <summary>
+    /// Acknowledges one delivery while serialising access to the channel.
+    /// </summary>
+    /// <param name="channel">Channel that owns the delivery.</param>
+    /// <param name="channelGate">Serialises channel operations.</param>
+    /// <param name="deliveryTag">Delivery identifier to acknowledge.</param>
+    private static async Task AcknowledgeDeliveryAsync(
+        IChannel channel,
+        SemaphoreSlim channelGate,
+        ulong deliveryTag)
+    {
+        await channelGate.WaitAsync(CancellationToken.None);
+
+        try
+        {
+            await channel.BasicAckAsync(
+                deliveryTag: deliveryTag,
+                multiple: false,
+                cancellationToken: CancellationToken.None);
+        }
+        finally
+        {
+            channelGate.Release();
         }
     }
 
@@ -348,6 +482,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="channel">
     /// Channel on which the delivery was received.
     /// </param>
+    /// <param name="channelGate">
+    /// Serialises acknowledgement operations on the shared channel.
+    /// </param>
     /// <param name="deliveryTag">
     /// RabbitMQ delivery identifier.
     /// </param>
@@ -356,9 +493,12 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// </param>
     private async Task<bool> RejectDeliveryAsync(
         IChannel channel,
+        SemaphoreSlim channelGate,
         ulong deliveryTag,
         bool requeue)
     {
+        await channelGate.WaitAsync(CancellationToken.None);
+
         try
         {
             await channel.BasicNackAsync(
@@ -378,8 +518,51 @@ internal sealed class RabbitMqTelemetryReadingConsumer
 
             return false;
         }
+        finally
+        {
+            channelGate.Release();
+        }
     }
 
+    /// <summary>
+    /// Cancels the RabbitMQ consumer during application shutdown.
+    /// </summary>
+    /// <param name="channel">Channel that owns the consumer.</param>
+    /// <param name="channelGate">Serialises channel operations.</param>
+    /// <param name="consumerTag">Consumer identifier to cancel.</param>
+    private async Task CancelConsumerAsync(
+        IChannel channel,
+        SemaphoreSlim channelGate,
+        string consumerTag)
+    {
+        await channelGate.WaitAsync(CancellationToken.None);
+
+        try
+        {
+            await channel.BasicCancelAsync(
+                consumerTag,
+                cancellationToken: CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogDebug(
+                exception,
+                "Telemetry consumer {ConsumerTag} was already stopped",
+                consumerTag);
+        }
+        finally
+        {
+            channelGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Records that an invalid delivery was sent to the dead-letter queue.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// Signals that event persistence should stop.
+    /// </param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private Task RecordInvalidMessageAsync(
         CancellationToken cancellationToken)
     {
