@@ -132,33 +132,12 @@
   </section>
 
   <section class="lower-grid">
-    <article class="panel events-panel" id="events">
-      <div class="panel-header">
-        <div>
-          <p class="section-kicker">Operational awareness</p>
-          <h2>Recent events</h2>
-        </div>
-        <button class="text-button" type="button">View all</button>
-      </div>
-
-      <ol class="event-list">
-        <li>
-          <span class="event-icon event-icon--info" aria-hidden="true">i</span>
-          <div><strong>Publishing interval updated</strong><small>2,000 ms → 500 ms</small></div>
-          <time datetime="2026-08-19T15:45:12Z">15:45:12</time>
-        </li>
-        <li>
-          <span class="event-icon event-icon--success" aria-hidden="true">✓</span>
-          <div><strong>DRILL-003 reconnected</strong><small>Stream resumed without a sequence gap</small></div>
-          <time datetime="2026-08-19T15:43:48Z">15:43:48</time>
-        </li>
-        <li>
-          <span class="event-icon event-icon--warning" aria-hidden="true">!</span>
-          <div><strong>Out-of-order reading detected</strong><small>DRILL-002 · sequence 18,426</small></div>
-          <time datetime="2026-08-19T15:41:07Z">15:41:07</time>
-        </li>
-      </ol>
-    </article>
+    <app-operational-events-panel
+      [events]="operationalEvents()"
+      [isLoading]="isLoadingOperationalEvents()"
+      [errorMessage]="operationalEventsError()"
+      (retryRequested)="loadOperationalEvents()"
+    />
 
     <app-simulation-control />
   </section>

@@ -155,8 +155,7 @@ h1 {
   font-weight: 600;
 }
 
-.secondary-button,
-.text-button {
+.secondary-button {
   border: 0;
   cursor: pointer;
 }
@@ -295,63 +294,6 @@ h1 {
 
 .lower-grid {
   grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
-}
-
-.text-button {
-  padding: 0.35rem;
-  background: transparent;
-  color: var(--cyan);
-  font-size: 0.65rem;
-  font-weight: 700;
-}
-
-.event-list {
-  display: grid;
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.event-list li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 0;
-  border-top: 1px solid var(--border);
-}
-
-.event-icon {
-  display: grid;
-  width: 1.55rem;
-  height: 1.55rem;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 0.65rem;
-  font-weight: 800;
-}
-
-.event-icon--info { background: var(--cyan-soft); color: var(--cyan); }
-.event-icon--success { background: rgba(107, 221, 155, 0.1); color: var(--green); }
-.event-icon--warning { background: var(--amber-soft); color: var(--amber); }
-
-.event-list li div {
-  display: grid;
-  gap: 0.18rem;
-}
-
-.event-list strong {
-  font-size: 0.7rem;
-}
-
-.event-list small,
-.event-list time {
-  color: var(--subtle);
-  font-size: 0.61rem;
-}
-
-.event-list time {
-  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 76rem) {

@@ -8,9 +8,11 @@ import type { HubConnection } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import type { OperationalEvent } from './operational-event';
 import type { TelemetryReading } from './telemetry-reading';
 
 const initialRetryDelayMilliseconds = 5_000;
+const operationalEventReceivedEventName = 'operationalEventReceived';
 const telemetryReadingReceivedEventName = 'telemetryReadingReceived';
 
 /** Describes the dashboard connection to the telemetry hub. */
@@ -25,6 +27,7 @@ export type LiveConnectionStatus =
 export class TelemetryLiveService {
   private readonly connectionStatusSignal = signal<LiveConnectionStatus>('disconnected');
   private readonly connectionEstablishedSubject = new Subject<void>();
+  private readonly operationalEventSubject = new Subject<OperationalEvent>();
   private readonly readingSubject = new Subject<TelemetryReading>();
   private readonly connection: HubConnection;
 
@@ -36,6 +39,9 @@ export class TelemetryLiveService {
 
   /** Stream of telemetry readings accepted by the Processor. */
   readonly readings$ = this.readingSubject.asObservable();
+
+  /** Stream of operational events detected by the Processor. */
+  readonly operationalEvents$ = this.operationalEventSubject.asObservable();
 
   /** Emits after an initial connection or successful reconnection. */
   readonly connectionEstablished$ = this.connectionEstablishedSubject.asObservable();
@@ -78,6 +84,12 @@ export class TelemetryLiveService {
     this.connection.on(
       telemetryReadingReceivedEventName,
       (reading: TelemetryReading) => this.readingSubject.next(reading)
+    );
+
+    this.connection.on(
+      operationalEventReceivedEventName,
+      (operationalEvent: OperationalEvent) =>
+        this.operationalEventSubject.next(operationalEvent)
     );
 
     this.connection.onreconnecting(() => {

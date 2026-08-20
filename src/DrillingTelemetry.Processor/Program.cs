@@ -39,6 +39,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapTelemetryReadingsEndpoints();
+app.MapOperationalEventsEndpoints();
 
 app.MapHub<TelemetryHub>(
     TelemetryHub.RoutePattern);

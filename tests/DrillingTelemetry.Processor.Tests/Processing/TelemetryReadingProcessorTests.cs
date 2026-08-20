@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Operations;
 using DrillingTelemetry.Processor.Persistence;
 using DrillingTelemetry.Processor.Processing;
 using DrillingTelemetry.Processor.Realtime;
@@ -224,6 +225,7 @@ public sealed class TelemetryReadingProcessorTests
             new TelemetryProcessingMetrics(meterFactory),
             new TelemetrySequenceTracker(),
             new InMemoryTelemetryReadingStore(),
+            new NoOpOperationalEventService(),
             broadcaster,
             NullLogger<TelemetryReadingProcessor>.Instance);
     }
@@ -304,6 +306,27 @@ public sealed class TelemetryReadingProcessorTests
                     : TelemetryReadingStoreResult.Conflict;
 
             return Task.FromResult(result);
+        }
+    }
+
+    private sealed class NoOpOperationalEventService
+        : IOperationalEventService
+    {
+        /// <inheritdoc />
+        public Task RecordAsync(
+            OperationalEvent operationalEvent,
+            CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public Task<IReadOnlyList<OperationalEvent>> GetRecentAsync(
+            int limit,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyList<OperationalEvent>>(
+                []);
         }
     }
 

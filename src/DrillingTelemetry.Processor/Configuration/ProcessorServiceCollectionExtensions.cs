@@ -1,4 +1,5 @@
 using DrillingTelemetry.Processor.Messaging;
+using DrillingTelemetry.Processor.Operations;
 using DrillingTelemetry.Processor.Diagnostics;
 using DrillingTelemetry.Processor.Persistence;
 using DrillingTelemetry.Processor.Processing;
@@ -134,12 +135,20 @@ internal static class ProcessorServiceCollectionExtensions
             IdempotentTelemetryReadingStore>();
 
         services.AddSingleton<
+            IOperationalEventStore,
+            OperationalEventStore>();
+
+        services.AddSingleton<
             ITelemetryHistoryReader,
             TelemetryHistoryReader>();
 
         services.AddSingleton<
             ITelemetryReadingProcessor,
             TelemetryReadingProcessor>();
+
+        services.AddSingleton<
+            IOperationalEventService,
+            OperationalEventService>();
 
         services.AddCors(options =>
         {
@@ -158,6 +167,10 @@ internal static class ProcessorServiceCollectionExtensions
         services.AddSingleton<
             ITelemetryReadingBroadcaster,
             SignalRTelemetryReadingBroadcaster>();
+
+        services.AddSingleton<
+            IOperationalEventBroadcaster,
+            SignalROperationalEventBroadcaster>();
 
         services.AddHostedService<
             RabbitMqTelemetryReadingConsumer>();

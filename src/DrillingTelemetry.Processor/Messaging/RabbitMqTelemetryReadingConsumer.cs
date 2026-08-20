@@ -2,6 +2,7 @@ using System.Text.Json;
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Configuration;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Operations;
 using DrillingTelemetry.Processor.Processing;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -22,7 +23,9 @@ internal sealed class RabbitMqTelemetryReadingConsumer
         "x-dead-letter-routing-key";
 
     private readonly RabbitMqOptions _rabbitMqOptions;
+    private readonly TimeProvider _timeProvider;
     private readonly TelemetryProcessingMetrics _metrics;
+    private readonly IOperationalEventService _operationalEventService;
     private readonly ITelemetryReadingProcessor _telemetryReadingProcessor;
     private readonly ILogger<RabbitMqTelemetryReadingConsumer> _logger;
 
@@ -35,27 +38,39 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="logger">
     /// Records consumer lifecycle and message processing information.
     /// </param>
+    /// <param name="timeProvider">
+    /// Provides the UTC time used for invalid message events.
+    /// </param>
     /// <param name="metrics">
     /// Records telemetry processing measurements.
     /// </param>
     /// <param name="telemetryReadingProcessor">
     /// Applies the processing policy to valid telemetry readings.
     /// </param>
+    /// <param name="operationalEventService">
+    /// Records invalid messages rejected by the consumer.
+    /// </param>
     public RabbitMqTelemetryReadingConsumer(
         IOptions<RabbitMqOptions> options,
         ILogger<RabbitMqTelemetryReadingConsumer> logger,
+        TimeProvider timeProvider,
         TelemetryProcessingMetrics metrics,
-        ITelemetryReadingProcessor telemetryReadingProcessor)
+        ITelemetryReadingProcessor telemetryReadingProcessor,
+        IOperationalEventService operationalEventService)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(metrics);
         ArgumentNullException.ThrowIfNull(telemetryReadingProcessor);
+        ArgumentNullException.ThrowIfNull(operationalEventService);
 
         _rabbitMqOptions = options.Value;
         _logger = logger;
+        _timeProvider = timeProvider;
         _metrics = metrics;
         _telemetryReadingProcessor = telemetryReadingProcessor;
+        _operationalEventService = operationalEventService;
     }
 
     /// <inheritdoc />
@@ -293,10 +308,16 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 exception,
                 "Invalid telemetry message received");
 
-            await RejectDeliveryAsync(
+            bool rejected = await RejectDeliveryAsync(
                 consumerChannel,
                 eventArgs.DeliveryTag,
                 requeue: false);
+
+            if (rejected)
+            {
+                await RecordInvalidMessageAsync(
+                    eventArgs.CancellationToken);
+            }
         }
         catch (OperationCanceledException)
             when (eventArgs.CancellationToken.IsCancellationRequested)
@@ -333,7 +354,7 @@ internal sealed class RabbitMqTelemetryReadingConsumer
     /// <param name="requeue">
     /// Whether RabbitMQ should make the delivery available again.
     /// </param>
-    private async Task RejectDeliveryAsync(
+    private async Task<bool> RejectDeliveryAsync(
         IChannel channel,
         ulong deliveryTag,
         bool requeue)
@@ -345,6 +366,8 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 multiple: false,
                 requeue: requeue,
                 cancellationToken: CancellationToken.None);
+
+            return true;
         }
         catch (Exception exception)
         {
@@ -352,6 +375,29 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 exception,
                 "Failed to reject telemetry delivery {DeliveryTag}",
                 deliveryTag);
+
+            return false;
         }
+    }
+
+    private Task RecordInvalidMessageAsync(
+        CancellationToken cancellationToken)
+    {
+        var operationalEvent = new OperationalEvent(
+            Guid.NewGuid(),
+            OperationalEventType.InvalidMessage,
+            OperationalEventSeverity.Warning,
+            DeviceId: null,
+            AcquisitionSessionId: null,
+            SequenceNumber: null,
+            PreviousSequenceNumber: null,
+            GapSize: null,
+            "An invalid telemetry message was rejected and sent " +
+            "to the dead-letter queue.",
+            _timeProvider.GetUtcNow());
+
+        return _operationalEventService.RecordAsync(
+            operationalEvent,
+            cancellationToken);
     }
 }

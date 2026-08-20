@@ -12,10 +12,13 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import type { Observable } from 'rxjs';
 
+import type { OperationalEvent } from '../data-access/operational-event';
+import { OperationalEventsService } from '../data-access/operational-events.service';
 import { TelemetryHistoryService } from '../data-access/telemetry-history.service';
 import type { TelemetryReading } from '../data-access/telemetry-reading';
 import { TelemetryLiveService } from '../data-access/telemetry-live.service';
 import { DeviceList } from '../device-list/device-list';
+import { OperationalEventsPanel } from '../operational-events-panel/operational-events-panel';
 import { SimulationControl } from '../simulation-control/simulation-control';
 import { TelemetryChart } from '../telemetry-chart/telemetry-chart';
 
@@ -34,21 +37,39 @@ const initialReadingState: ReadingState = {
 };
 
 const maximumDisplayedReadings = 100;
+const maximumOperationalEvents = 20;
 
 /** Presents the operational overview for the selected drilling context. */
 @Component({
   selector: 'app-dashboard-page',
-  imports: [DatePipe, DecimalPipe, DeviceList, SimulationControl, TelemetryChart],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    DeviceList,
+    OperationalEventsPanel,
+    SimulationControl,
+    TelemetryChart
+  ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardPage {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly operationalEventsService = inject(OperationalEventsService);
   private readonly telemetryHistoryService = inject(TelemetryHistoryService);
   private readonly telemetryLiveService = inject(TelemetryLiveService);
 
   private readonly liveReadings = signal<readonly TelemetryReading[]>([]);
+
+  /** Persisted and live operational events in reverse chronological order. */
+  protected readonly operationalEvents = signal<readonly OperationalEvent[]>([]);
+
+  /** Indicates whether operational events are being loaded. */
+  protected readonly isLoadingOperationalEvents = signal(true);
+
+  /** User-facing error produced by the operational event request. */
+  protected readonly operationalEventsError = signal<string | null>(null);
 
   /** Device identifiers returned by the Processor API. */
   protected readonly deviceIds = signal<readonly string[]>([]);
@@ -126,10 +147,17 @@ export class DashboardPage {
 
   constructor() {
     this.loadDevices();
+    this.loadOperationalEvents();
 
     this.telemetryLiveService.readings$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(reading => this.receiveLiveReading(reading));
+
+    this.telemetryLiveService.operationalEvents$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(operationalEvent =>
+        this.receiveOperationalEvent(operationalEvent)
+      );
 
     this.telemetryLiveService.connectionEstablished$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -159,6 +187,32 @@ export class DashboardPage {
               : 'The available devices could not be loaded.'
           );
           this.isLoadingDevices.set(false);
+        }
+      });
+  }
+
+  /** Loads recent operational events from the Processor API. */
+  protected loadOperationalEvents(): void {
+    this.isLoadingOperationalEvents.set(true);
+    this.operationalEventsError.set(null);
+
+    this.operationalEventsService
+      .getRecentEvents(maximumOperationalEvents)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: operationalEvents => {
+          this.operationalEvents.update(currentEvents =>
+            this.mergeOperationalEvents(currentEvents, operationalEvents)
+          );
+          this.isLoadingOperationalEvents.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.operationalEventsError.set(
+            error.status === 0
+              ? 'The Processor API is unavailable.'
+              : 'Operational events could not be loaded.'
+          );
+          this.isLoadingOperationalEvents.set(false);
         }
       });
   }
@@ -218,12 +272,18 @@ export class DashboardPage {
     this.liveReadings.update(readings => this.mergeReadings(readings, [reading]));
   }
 
-  private refreshHistoryAfterConnection(): void {
-    if (!this.selectedDeviceId()) {
-      return;
-    }
+  private receiveOperationalEvent(operationalEvent: OperationalEvent): void {
+    this.operationalEvents.update(operationalEvents =>
+      this.mergeOperationalEvents(operationalEvents, [operationalEvent])
+    );
+  }
 
-    this.historyRefreshRevision.update(revision => revision + 1);
+  private refreshHistoryAfterConnection(): void {
+    this.loadOperationalEvents();
+
+    if (this.selectedDeviceId()) {
+      this.historyRefreshRevision.update(revision => revision + 1);
+    }
   }
 
   private mergeReadings(
@@ -250,5 +310,22 @@ export class DashboardPage {
       Date.parse(left.timestampUtc) - Date.parse(right.timestampUtc);
 
     return timestampDifference || left.sequenceNumber - right.sequenceNumber;
+  }
+
+  private mergeOperationalEvents(
+    baseline: readonly OperationalEvent[],
+    incoming: readonly OperationalEvent[]
+  ): readonly OperationalEvent[] {
+    const eventsById = new Map<string, OperationalEvent>();
+
+    for (const operationalEvent of [...baseline, ...incoming]) {
+      eventsById.set(operationalEvent.eventId, operationalEvent);
+    }
+
+    return [...eventsById.values()]
+      .sort((left, right) =>
+        Date.parse(right.occurredAtUtc) - Date.parse(left.occurredAtUtc)
+      )
+      .slice(0, maximumOperationalEvents);
   }
 }

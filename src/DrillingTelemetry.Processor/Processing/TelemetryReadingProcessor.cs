@@ -1,5 +1,6 @@
 using DrillingTelemetry.Contracts;
 using DrillingTelemetry.Processor.Diagnostics;
+using DrillingTelemetry.Processor.Operations;
 using DrillingTelemetry.Processor.Persistence;
 using DrillingTelemetry.Processor.Realtime;
 using DrillingTelemetry.Processor.Sequencing;
@@ -17,6 +18,7 @@ internal sealed class TelemetryReadingProcessor
     private readonly TelemetryProcessingMetrics _metrics;
     private readonly TelemetrySequenceTracker _sequenceTracker;
     private readonly ITelemetryReadingStore _telemetryReadingStore;
+    private readonly IOperationalEventService _operationalEventService;
     private readonly ITelemetryReadingBroadcaster _telemetryReadingBroadcaster;
     private readonly ILogger<TelemetryReadingProcessor> _logger;
 
@@ -33,6 +35,9 @@ internal sealed class TelemetryReadingProcessor
     /// <param name="telemetryReadingStore">
     /// Persists readings using their durable idempotency key.
     /// </param>
+    /// <param name="operationalEventService">
+    /// Records anomalies detected while processing telemetry.
+    /// </param>
     /// <param name="telemetryReadingBroadcaster">
     /// Broadcasts accepted readings to connected clients.
     /// </param>
@@ -44,6 +49,7 @@ internal sealed class TelemetryReadingProcessor
         TelemetryProcessingMetrics metrics,
         TelemetrySequenceTracker sequenceTracker,
         ITelemetryReadingStore telemetryReadingStore,
+        IOperationalEventService operationalEventService,
         ITelemetryReadingBroadcaster telemetryReadingBroadcaster,
         ILogger<TelemetryReadingProcessor> logger)
     {
@@ -51,6 +57,7 @@ internal sealed class TelemetryReadingProcessor
         ArgumentNullException.ThrowIfNull(metrics);
         ArgumentNullException.ThrowIfNull(sequenceTracker);
         ArgumentNullException.ThrowIfNull(telemetryReadingStore);
+        ArgumentNullException.ThrowIfNull(operationalEventService);
         ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -58,6 +65,7 @@ internal sealed class TelemetryReadingProcessor
         _metrics = metrics;
         _sequenceTracker = sequenceTracker;
         _telemetryReadingStore = telemetryReadingStore;
+        _operationalEventService = operationalEventService;
         _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
         _logger = logger;
     }
@@ -76,7 +84,9 @@ internal sealed class TelemetryReadingProcessor
 
         if (storeResult == TelemetryReadingStoreResult.Duplicate)
         {
-            RecordDuplicate(reading);
+            await RecordDuplicateAsync(
+                reading,
+                cancellationToken);
 
             return TelemetryProcessingResult.Duplicate;
         }
@@ -91,6 +101,16 @@ internal sealed class TelemetryReadingProcessor
                 reading.DeviceId,
                 reading.SequenceNumber);
 
+            await RecordOperationalEventAsync(
+                reading,
+                OperationalEventType.ConflictingReading,
+                OperationalEventSeverity.Critical,
+                previousSequenceNumber: null,
+                gapSize: null,
+                "The sequence identity was reused with " +
+                "different telemetry content.",
+                cancellationToken);
+
             return TelemetryProcessingResult.Conflict;
         }
 
@@ -100,7 +120,10 @@ internal sealed class TelemetryReadingProcessor
                 reading.AcquisitionSessionId,
                 reading.SequenceNumber);
 
-        if (!ShouldPublish(reading, observation))
+        if (!await ShouldPublishAsync(
+                reading,
+                observation,
+                cancellationToken))
         {
             return observation.Status ==
                 TelemetrySequenceStatus.OutOfOrder
@@ -141,9 +164,10 @@ internal sealed class TelemetryReadingProcessor
     /// <see langword="true"/> when the reading advances the device sequence;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    private bool ShouldPublish(
+    private async Task<bool> ShouldPublishAsync(
         TelemetryReading reading,
-        TelemetrySequenceObservation observation)
+        TelemetrySequenceObservation observation,
+        CancellationToken cancellationToken)
     {
         switch (observation.Status)
         {
@@ -159,10 +183,22 @@ internal sealed class TelemetryReadingProcessor
                     reading.SequenceNumber,
                     observation.PreviousSequenceNumber,
                     observation.GapSize);
+
+                await RecordOperationalEventAsync(
+                    reading,
+                    OperationalEventType.SequenceGap,
+                    OperationalEventSeverity.Warning,
+                    observation.PreviousSequenceNumber,
+                    observation.GapSize,
+                    $"{observation.GapSize} sequence positions were " +
+                    $"skipped after {observation.PreviousSequenceNumber}.",
+                    cancellationToken);
                 return true;
 
             case TelemetrySequenceStatus.Duplicate:
-                RecordDuplicate(reading);
+                await RecordDuplicateAsync(
+                    reading,
+                    cancellationToken);
                 return false;
 
             case TelemetrySequenceStatus.OutOfOrder:
@@ -175,6 +211,17 @@ internal sealed class TelemetryReadingProcessor
                     reading.SequenceNumber,
                     reading.DeviceId,
                     observation.PreviousSequenceNumber);
+
+                await RecordOperationalEventAsync(
+                    reading,
+                    OperationalEventType.OutOfOrderReading,
+                    OperationalEventSeverity.Warning,
+                    observation.PreviousSequenceNumber,
+                    gapSize: null,
+                    $"Sequence {reading.SequenceNumber} arrived after " +
+                    $"sequence {observation.PreviousSequenceNumber} " +
+                    "had already been observed.",
+                    cancellationToken);
                 return false;
 
             case TelemetrySequenceStatus.Baseline:
@@ -192,7 +239,9 @@ internal sealed class TelemetryReadingProcessor
     /// Records an identical telemetry reading that requires no further work.
     /// </summary>
     /// <param name="reading">Duplicate telemetry reading.</param>
-    private void RecordDuplicate(TelemetryReading reading)
+    private async Task RecordDuplicateAsync(
+        TelemetryReading reading,
+        CancellationToken cancellationToken)
     {
         _metrics.RecordDuplicateReading();
 
@@ -201,5 +250,40 @@ internal sealed class TelemetryReadingProcessor
             "received from {DeviceId}",
             reading.SequenceNumber,
             reading.DeviceId);
+
+        await RecordOperationalEventAsync(
+            reading,
+            OperationalEventType.DuplicateReading,
+            OperationalEventSeverity.Warning,
+            previousSequenceNumber: reading.SequenceNumber,
+            gapSize: null,
+            "An identical reading was ignored.",
+            cancellationToken);
+    }
+
+    private Task RecordOperationalEventAsync(
+        TelemetryReading reading,
+        OperationalEventType eventType,
+        OperationalEventSeverity severity,
+        long? previousSequenceNumber,
+        long? gapSize,
+        string message,
+        CancellationToken cancellationToken)
+    {
+        var operationalEvent = new OperationalEvent(
+            Guid.NewGuid(),
+            eventType,
+            severity,
+            reading.DeviceId,
+            reading.AcquisitionSessionId,
+            reading.SequenceNumber,
+            previousSequenceNumber,
+            gapSize,
+            message,
+            _timeProvider.GetUtcNow());
+
+        return _operationalEventService.RecordAsync(
+            operationalEvent,
+            cancellationToken);
     }
 }

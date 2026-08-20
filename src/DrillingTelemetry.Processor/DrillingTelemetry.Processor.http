@@ -11,3 +11,11 @@ Accept: application/json
 ### Validate the maximum reading limit
 GET {{baseUrl}}/api/telemetry/readings/DRILL-001?limit=1001
 Accept: application/problem+json
+
+### Get recent operational events
+GET {{baseUrl}}/api/telemetry/events?limit=20
+Accept: application/json
+
+### Validate the maximum operational event limit
+GET {{baseUrl}}/api/telemetry/events?limit=101
+Accept: application/problem+json

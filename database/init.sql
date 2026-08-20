@@ -23,3 +23,29 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
 
 CREATE INDEX IF NOT EXISTS ix_telemetry_readings_device_timestamp
     ON telemetry_readings (device_id, timestamp_utc);
+
+CREATE TABLE IF NOT EXISTS operational_events
+(
+    event_id                 uuid                     NOT NULL,
+    event_type               text                     NOT NULL,
+    severity                 text                     NOT NULL,
+    device_id                text,
+    acquisition_session_id   uuid,
+    sequence_number          bigint,
+    previous_sequence_number bigint,
+    gap_size                 bigint,
+    message                  text                     NOT NULL,
+    occurred_at_utc          timestamp with time zone NOT NULL,
+
+    CONSTRAINT pk_operational_events
+        PRIMARY KEY (event_id),
+
+    CONSTRAINT ck_operational_events_sequence_number
+        CHECK (sequence_number IS NULL OR sequence_number > 0),
+
+    CONSTRAINT ck_operational_events_gap_size
+        CHECK (gap_size IS NULL OR gap_size > 0)
+);
+
+CREATE INDEX IF NOT EXISTS ix_operational_events_occurred_at
+    ON operational_events (occurred_at_utc DESC);
