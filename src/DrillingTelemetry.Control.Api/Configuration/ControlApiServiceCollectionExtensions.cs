@@ -8,23 +8,48 @@ namespace DrillingTelemetry.Control.Api.Configuration;
 /// </summary>
 internal static class ControlApiServiceCollectionExtensions
 {
+    private const string AllowedOriginsSectionName =
+        "Cors:AllowedOrigins";
+
     /// <summary>
     /// Adds the Control API services to the application.
     /// </summary>
     /// <param name="services">
     /// Collection receiving the Control API services.
     /// </param>
+    /// <param name="configuration">
+    /// Provides the application configuration.
+    /// </param>
     /// <returns>
     /// The same service collection so registrations can be chained.
     /// </returns>
     public static IServiceCollection AddControlApi(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        string[] allowedOrigins = configuration
+            .GetSection(AllowedOriginsSectionName)
+            .Get<string[]>()
+            ?? throw new InvalidOperationException(
+                "CORS allowed origins are missing.");
 
         services.AddProblemDetails();
         services.AddOpenApi();
         services.AddValidation();
+
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyHeader()
+                    .WithMethods(HttpMethods.Post);
+            });
+        });
 
         services
             .AddOptions<RabbitMqOptions>()

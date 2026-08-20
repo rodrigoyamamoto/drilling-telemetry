@@ -2,19 +2,68 @@
   <div class="panel-header">
     <div>
       <p class="section-kicker">Simulation control</p>
-      <h2>Acquisition rate</h2>
+      <h2>Runtime settings</h2>
     </div>
-    <span class="mode-badge">Random mode</span>
+    <span class="mode-badge">Live update</span>
   </div>
 
-  <label class="range-field" for="publishing-interval">
-    <span><strong>Publishing interval</strong><output for="publishing-interval">500 ms</output></span>
-    <input id="publishing-interval" type="range" min="100" max="5000" value="500" />
-    <span class="range-scale"><small>100 ms</small><small>5 sec</small></span>
-  </label>
+  <form [formGroup]="settingsForm" (ngSubmit)="applySettings()">
+    <label class="device-field" for="device-identifiers">
+      <span><strong>Active devices</strong><small>One per line or comma-separated</small></span>
+      <textarea
+        id="device-identifiers"
+        formControlName="deviceIdentifiers"
+        rows="3"
+        spellcheck="false"
+        aria-describedby="device-identifiers-hint"
+      ></textarea>
+    </label>
 
-  <div class="control-footer">
-    <span>Changes apply without restarting the simulator.</span>
-    <button class="primary-button" type="button">Apply changes</button>
-  </div>
+    <span id="device-identifiers-hint" class="field-hint">
+      The next accepted update replaces the simulator device list.
+    </span>
+
+    <label class="range-field" for="publishing-interval">
+      <span>
+        <strong>Publishing interval</strong>
+        <output for="publishing-interval">
+          {{ settingsForm.controls.publishingIntervalMilliseconds.value }} ms
+        </output>
+      </span>
+      <input
+        id="publishing-interval"
+        type="range"
+        formControlName="publishingIntervalMilliseconds"
+        [min]="minimumInterval"
+        [max]="maximumInterval"
+        step="50"
+      />
+      <span class="range-scale">
+        <small>{{ minimumInterval }} ms</small>
+        <small>5 sec</small>
+      </span>
+    </label>
+
+    <div class="control-footer">
+      <span
+        class="update-message"
+        [class.update-message--accepted]="updateStatus() === 'accepted'"
+        [class.update-message--error]="updateStatus() === 'error'"
+        aria-live="polite"
+      >
+        {{ updateMessage() ?? 'Changes apply without restarting the simulator.' }}
+      </span>
+      <button
+        class="primary-button"
+        type="submit"
+        [disabled]="updateStatus() === 'submitting' || !hasChanges()"
+      >
+        @switch (updateStatus()) {
+          @case ('submitting') { Applying… }
+          @case ('accepted') { Applied }
+          @default { Apply changes }
+        }
+      </button>
+    </div>
+  </form>
 </article>

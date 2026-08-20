@@ -4,11 +4,13 @@ using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControlApi();
+builder.Services.AddControlApi(
+    builder.Configuration);
 
 WebApplication app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {

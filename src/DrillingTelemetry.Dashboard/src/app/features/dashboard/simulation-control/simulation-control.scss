@@ -4,7 +4,8 @@
 }
 
 .control-footer,
-.range-field > span {
+.range-field > span,
+.device-field > span {
   display: flex;
   align-items: center;
 }
@@ -19,18 +20,52 @@
   font-weight: 600;
 }
 
-.range-field {
+.range-field,
+.device-field {
   display: block;
   margin-top: 1.25rem;
 }
 
-.range-field > span {
+.range-field > span,
+.device-field > span {
   justify-content: space-between;
+  gap: 1rem;
 }
 
-.range-field > span strong {
+.range-field > span strong,
+.device-field > span strong {
   color: var(--muted);
   font-size: 0.68rem;
+}
+
+.device-field small,
+.field-hint {
+  color: var(--subtle);
+  font-size: 0.58rem;
+}
+
+.device-field textarea {
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.7rem 0.75rem;
+  resize: vertical;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.55rem;
+  background: rgba(4, 13, 20, 0.58);
+  color: var(--text);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.device-field textarea:hover,
+.device-field textarea:focus {
+  border-color: rgba(50, 214, 208, 0.5);
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.45rem;
 }
 
 .range-field output {
@@ -65,6 +100,14 @@
   font-size: 0.61rem;
 }
 
+.update-message--accepted {
+  color: var(--green) !important;
+}
+
+.update-message--error {
+  color: var(--amber) !important;
+}
+
 .primary-button {
   flex: 0 0 auto;
   padding: 0.65rem 0.85rem;
@@ -81,6 +124,13 @@
 .primary-button:hover {
   background: #5de2dc;
   box-shadow: 0 0.5rem 1.5rem rgba(50, 214, 208, 0.16);
+}
+
+.primary-button:disabled {
+  background: rgba(143, 163, 181, 0.16);
+  box-shadow: none;
+  color: var(--subtle);
+  cursor: not-allowed;
 }
 
 @media (max-width: 48rem) {
