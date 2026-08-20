@@ -115,7 +115,7 @@ export class OperationalDepthChart implements OnDestroy {
       type: 'line',
       data: this.createChartData(readings),
       options: {
-        animation: { duration: 300 },
+        animation: false,
         interaction: {
           intersect: false,
           mode: 'nearest',
@@ -224,7 +224,7 @@ export class OperationalDepthChart implements OnDestroy {
     }
 
     this.chart.data.datasets[0].pointRadius = readings.length === 1 ? 3 : 0;
-    this.chart.update();
+    this.chart.update('none');
   }
 
   private getDepthAxisRange(readings: readonly TelemetryReading[]): DepthAxisRange {
