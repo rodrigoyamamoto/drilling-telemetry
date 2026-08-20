@@ -6,7 +6,7 @@ import {
   computed,
   DestroyRef,
   inject,
-  signal
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
@@ -21,6 +21,7 @@ import type { TelemetryReading } from '../data-access/telemetry-reading';
 import { TelemetryLiveService } from '../data-access/telemetry-live.service';
 import { DeviceList } from '../device-list/device-list';
 import { OperationalEventsPanel } from '../operational-events-panel/operational-events-panel';
+import { OperationalDepthChart } from '../operational-depth-chart/operational-depth-chart';
 import { SimulationControl } from '../simulation-control/simulation-control';
 import { TelemetryChart } from '../telemetry-chart/telemetry-chart';
 
@@ -35,7 +36,7 @@ interface ReadingState {
 const initialReadingState: ReadingState = {
   status: 'idle',
   readings: [],
-  errorMessage: null
+  errorMessage: null,
 };
 
 const maximumDisplayedReadings = 100;
@@ -48,13 +49,14 @@ const maximumOperationalEvents = 20;
     DatePipe,
     DecimalPipe,
     DeviceList,
+    OperationalDepthChart,
     OperationalEventsPanel,
     SimulationControl,
-    TelemetryChart
+    TelemetryChart,
   ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardPage {
   private readonly destroyRef = inject(DestroyRef);
@@ -85,7 +87,7 @@ export class DashboardPage {
   private readonly historyRefreshRevision = signal(0);
   private readonly readingQuery = computed(() => ({
     deviceId: this.selectedDeviceId(),
-    revision: this.historyRefreshRevision()
+    revision: this.historyRefreshRevision(),
   }));
 
   /** Indicates whether the device request is in progress. */
@@ -96,20 +98,17 @@ export class DashboardPage {
 
   /** Historical reading request driven by the selected device. */
   protected readonly readingState = toSignal(
-    toObservable(this.readingQuery).pipe(
-      switchMap(query => this.loadReadings(query.deviceId))
-    ),
-    { initialValue: initialReadingState }
+    toObservable(this.readingQuery).pipe(switchMap((query) => this.loadReadings(query.deviceId))),
+    { initialValue: initialReadingState },
   );
 
   /** SignalR connection status exposed by the live telemetry service. */
   protected readonly liveConnectionStatus = this.telemetryLiveService.connectionStatus;
 
   /** Historical baseline merged with accepted live readings. */
-  protected readonly displayedReadings = computed(() => this.mergeReadings(
-    this.readingState().readings,
-    this.liveReadings()
-  ));
+  protected readonly displayedReadings = computed(() =>
+    this.mergeReadings(this.readingState().readings, this.liveReadings()),
+  );
 
   /** Most recent reading available to the dashboard. */
   protected readonly latestReading = computed(() => this.displayedReadings().at(-1) ?? null);
@@ -119,7 +118,10 @@ export class DashboardPage {
     const wellId = this.latestReading()?.wellId;
 
     return wellId
-      ? wellId.replaceAll(/[^a-zA-Z0-9]/g, '').slice(-2).toUpperCase()
+      ? wellId
+          .replaceAll(/[^a-zA-Z0-9]/g, '')
+          .slice(-2)
+          .toUpperCase()
       : '—';
   });
 
@@ -142,9 +144,7 @@ export class DashboardPage {
     const state = this.readingState();
 
     if (this.displayedReadings().length > 0) {
-      return this.liveConnectionStatus() === 'connected'
-        ? 'Live sample'
-        : 'Latest sample';
+      return this.liveConnectionStatus() === 'connected' ? 'Live sample' : 'Latest sample';
     }
 
     switch (state.status) {
@@ -179,17 +179,15 @@ export class DashboardPage {
 
     this.telemetryLiveService.readings$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(reading => this.receiveLiveReading(reading));
+      .subscribe((reading) => this.receiveLiveReading(reading));
 
     this.telemetryLiveService.operationalEvents$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(operationalEvent =>
-        this.receiveOperationalEvent(operationalEvent)
-      );
+      .subscribe((operationalEvent) => this.receiveOperationalEvent(operationalEvent));
 
     this.telemetryLiveService.metrics$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(metrics => this.telemetryMetrics.set(metrics));
+      .subscribe((metrics) => this.telemetryMetrics.set(metrics));
 
     this.telemetryLiveService.connectionEstablished$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -207,7 +205,7 @@ export class DashboardPage {
       .getDeviceIds()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: deviceIds => {
+        next: (deviceIds) => {
           this.deviceIds.set(deviceIds);
           this.selectAvailableDevice(deviceIds);
           this.isLoadingDevices.set(false);
@@ -216,10 +214,10 @@ export class DashboardPage {
           this.deviceLoadError.set(
             error.status === 0
               ? 'The Processor API is unavailable.'
-              : 'The available devices could not be loaded.'
+              : 'The available devices could not be loaded.',
           );
           this.isLoadingDevices.set(false);
-        }
+        },
       });
   }
 
@@ -232,9 +230,9 @@ export class DashboardPage {
       .getRecentEvents(maximumOperationalEvents)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: operationalEvents => {
-          this.operationalEvents.update(currentEvents =>
-            this.mergeOperationalEvents(currentEvents, operationalEvents)
+        next: (operationalEvents) => {
+          this.operationalEvents.update((currentEvents) =>
+            this.mergeOperationalEvents(currentEvents, operationalEvents),
           );
           this.isLoadingOperationalEvents.set(false);
         },
@@ -242,10 +240,10 @@ export class DashboardPage {
           this.operationalEventsError.set(
             error.status === 0
               ? 'The Processor API is unavailable.'
-              : 'Operational events could not be loaded.'
+              : 'Operational events could not be loaded.',
           );
           this.isLoadingOperationalEvents.set(false);
-        }
+        },
       });
   }
 
@@ -276,23 +274,26 @@ export class DashboardPage {
     }
 
     return this.telemetryHistoryService.getReadings(deviceId).pipe(
-      map(readings => ({
+      map((readings) => ({
         status: 'loaded' as const,
         readings,
-        errorMessage: null
+        errorMessage: null,
       })),
-      catchError((error: HttpErrorResponse) => of({
-        status: 'error' as const,
-        readings: [],
-        errorMessage: error.status === 0
-          ? 'The Processor API is unavailable.'
-          : 'Historical readings could not be loaded.'
-      })),
+      catchError((error: HttpErrorResponse) =>
+        of({
+          status: 'error' as const,
+          readings: [],
+          errorMessage:
+            error.status === 0
+              ? 'The Processor API is unavailable.'
+              : 'Historical readings could not be loaded.',
+        }),
+      ),
       startWith({
         status: 'loading' as const,
         readings: [],
-        errorMessage: null
-      })
+        errorMessage: null,
+      }),
     );
   }
 
@@ -301,12 +302,12 @@ export class DashboardPage {
       return;
     }
 
-    this.liveReadings.update(readings => this.mergeReadings(readings, [reading]));
+    this.liveReadings.update((readings) => this.mergeReadings(readings, [reading]));
   }
 
   private receiveOperationalEvent(operationalEvent: OperationalEvent): void {
-    this.operationalEvents.update(operationalEvents =>
-      this.mergeOperationalEvents(operationalEvents, [operationalEvent])
+    this.operationalEvents.update((operationalEvents) =>
+      this.mergeOperationalEvents(operationalEvents, [operationalEvent]),
     );
   }
 
@@ -314,13 +315,13 @@ export class DashboardPage {
     this.loadOperationalEvents();
 
     if (this.selectedDeviceId()) {
-      this.historyRefreshRevision.update(revision => revision + 1);
+      this.historyRefreshRevision.update((revision) => revision + 1);
     }
   }
 
   private mergeReadings(
     baseline: readonly TelemetryReading[],
-    incoming: readonly TelemetryReading[]
+    incoming: readonly TelemetryReading[],
   ): readonly TelemetryReading[] {
     const readingsByIdentity = new Map<string, TelemetryReading>();
 
@@ -338,15 +339,14 @@ export class DashboardPage {
   }
 
   private compareReadings(left: TelemetryReading, right: TelemetryReading): number {
-    const timestampDifference =
-      Date.parse(left.timestampUtc) - Date.parse(right.timestampUtc);
+    const timestampDifference = Date.parse(left.timestampUtc) - Date.parse(right.timestampUtc);
 
     return timestampDifference || left.sequenceNumber - right.sequenceNumber;
   }
 
   private mergeOperationalEvents(
     baseline: readonly OperationalEvent[],
-    incoming: readonly OperationalEvent[]
+    incoming: readonly OperationalEvent[],
   ): readonly OperationalEvent[] {
     const eventsById = new Map<string, OperationalEvent>();
 
@@ -355,9 +355,7 @@ export class DashboardPage {
     }
 
     return [...eventsById.values()]
-      .sort((left, right) =>
-        Date.parse(right.occurredAtUtc) - Date.parse(left.occurredAtUtc)
-      )
+      .sort((left, right) => Date.parse(right.occurredAtUtc) - Date.parse(left.occurredAtUtc))
       .slice(0, maximumOperationalEvents);
   }
 }

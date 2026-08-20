@@ -204,10 +204,18 @@ h1 {
   content: '';
 }
 
-.metric-card--pressure::before { background: var(--cyan); }
-.metric-card--temperature::before { background: var(--amber); }
-.metric-card--throughput::before { background: var(--green); }
-.metric-card--latency::before { background: #8ca9ff; }
+.metric-card--pressure::before {
+  background: var(--cyan);
+}
+.metric-card--temperature::before {
+  background: var(--amber);
+}
+.metric-card--throughput::before {
+  background: var(--green);
+}
+.metric-card--latency::before {
+  background: #8ca9ff;
+}
 
 .metric-card__header,
 .metric-card__footer {
@@ -277,14 +285,41 @@ h1 {
   height: 1rem;
   flex: 0 0 auto;
   background: currentColor;
-  clip-path: polygon(0 70%, 15% 45%, 31% 60%, 48% 30%, 64% 48%, 80% 20%, 100% 34%, 100% 43%, 80% 29%, 64% 57%, 48% 39%, 31% 69%, 15% 54%, 0 79%);
+  clip-path: polygon(
+    0 70%,
+    15% 45%,
+    31% 60%,
+    48% 30%,
+    64% 48%,
+    80% 20%,
+    100% 34%,
+    100% 43%,
+    80% 29%,
+    64% 57%,
+    48% 39%,
+    31% 69%,
+    15% 54%,
+    0 79%
+  );
   opacity: 0.8;
 }
 
-.metric-spark--pressure { color: var(--cyan); }
-.metric-spark--temperature { color: var(--amber); }
-.metric-spark--throughput { color: var(--green); }
-.metric-spark--latency { color: #8ca9ff; }
+.metric-spark--pressure {
+  color: var(--cyan);
+}
+.metric-spark--temperature {
+  color: var(--amber);
+}
+.metric-spark--throughput {
+  color: var(--green);
+}
+.metric-spark--latency {
+  color: #8ca9ff;
+}
+
+.depth-section {
+  margin-bottom: 1rem;
+}
 
 .main-grid,
 .lower-grid {

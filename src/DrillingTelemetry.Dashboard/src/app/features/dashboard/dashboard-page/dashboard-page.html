@@ -35,8 +35,14 @@
     </div>
 
     <dl class="context-details">
-      <div><dt>Wellbore</dt><dd>{{ latestReading()?.wellboreId ?? '—' }}</dd></div>
-      <div><dt>Operation</dt><dd>{{ drillingOperationLabel() }}</dd></div>
+      <div>
+        <dt>Wellbore</dt>
+        <dd>{{ latestReading()?.wellboreId ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Operation</dt>
+        <dd>{{ drillingOperationLabel() }}</dd>
+      </div>
       <div>
         <dt>Measured depth</dt>
         <dd>
@@ -47,7 +53,10 @@
           }
         </dd>
       </div>
-      <div><dt>Acquisition</dt><dd>Real-time</dd></div>
+      <div>
+        <dt>Acquisition</dt>
+        <dd>Real-time</dd>
+      </div>
     </dl>
 
     <button class="secondary-button" type="button">Change well</button>
@@ -61,7 +70,8 @@
       </div>
       <div class="metric-value">
         @if (latestReading(); as reading) {
-          <strong>{{ reading.pressurePsi | number: '1.0-1' }}</strong><span>psi</span>
+          <strong>{{ reading.pressurePsi | number: '1.0-1' }}</strong
+          ><span>psi</span>
         } @else {
           <strong>—</strong><span>psi</span>
         }
@@ -69,7 +79,9 @@
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--pressure" aria-hidden="true"></span>
         @if (latestReading(); as reading) {
-          <span>{{ reading.deviceId }} · sequence {{ reading.sequenceNumber | number: '1.0-0' }}</span>
+          <span
+            >{{ reading.deviceId }} · sequence {{ reading.sequenceNumber | number: '1.0-0' }}</span
+          >
         } @else {
           <span>{{ readingState().errorMessage ?? 'Waiting for persisted telemetry' }}</span>
         }
@@ -83,7 +95,8 @@
       </div>
       <div class="metric-value">
         @if (latestReading(); as reading) {
-          <strong>{{ reading.temperatureCelsius | number: '1.0-1' }}</strong><span>°C</span>
+          <strong>{{ reading.temperatureCelsius | number: '1.0-1' }}</strong
+          ><span>°C</span>
         } @else {
           <strong>—</strong><span>°C</span>
         }
@@ -107,7 +120,8 @@
       </div>
       <div class="metric-value">
         @if (telemetryMetrics(); as metrics) {
-          <strong>{{ metrics.readingsPerSecond | number: '1.1-1' }}</strong><span>msg/s</span>
+          <strong>{{ metrics.readingsPerSecond | number: '1.1-1' }}</strong
+          ><span>msg/s</span>
         } @else {
           <strong>—</strong><span>msg/s</span>
         }
@@ -132,7 +146,8 @@
       <div class="metric-value">
         @if (telemetryMetrics(); as metrics) {
           @if (metrics.latestEndToEndLatencyMilliseconds !== null) {
-            <strong>{{ metrics.latestEndToEndLatencyMilliseconds | number: '1.0-0' }}</strong><span>ms</span>
+            <strong>{{ metrics.latestEndToEndLatencyMilliseconds | number: '1.0-0' }}</strong
+            ><span>ms</span>
           } @else {
             <strong>—</strong><span>ms</span>
           }
@@ -149,6 +164,17 @@
         }
       </div>
     </article>
+  </section>
+
+  <section class="depth-section" aria-label="Operational depth trend">
+    <app-operational-depth-chart
+      [readings]="displayedReadings()"
+      [selectedDeviceId]="selectedDeviceId()"
+      [operation]="latestReading()?.drillingOperation ?? null"
+      [operationLabel]="drillingOperationLabel()"
+      [isLoading]="readingState().status === 'loading' && displayedReadings().length === 0"
+      [errorMessage]="displayedReadings().length === 0 ? readingState().errorMessage : null"
+    />
   </section>
 
   <section class="main-grid">
