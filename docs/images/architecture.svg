@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
+  <title id="title">Drilling Telemetry system architecture</title>
+  <desc id="description">The Angular dashboard sends runtime settings to the Control API. The Control API publishes them through RabbitMQ to Device Simulator instances. Simulators publish telemetry readings to RabbitMQ. Concurrent Processor consumers validate, persist and broadcast accepted readings. PostgreSQL stores telemetry and operational events, SignalR streams live data to the dashboard, and rejected messages are routed to a dead-letter queue.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06131d"/><stop offset="1" stop-color="#0a1d29"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#102532"/><stop offset="1" stop-color="#0b1d28"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.24"/></filter>
+    <marker id="arrow-cyan" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#2dd4d7"/></marker>
+    <marker id="arrow-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#61e6a7"/></marker>
+    <marker id="arrow-orange" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#f4aa3c"/></marker>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#7aa7ff"/></marker>
+    <style>
+      text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .title { fill: #eef7ff; font-size: 32px; font-weight: 750; }
+      .subtitle { fill: #8ca5b5; font-size: 15px; }
+      .lane-title { fill: #2dd4d7; font-size: 13px; font-weight: 800; letter-spacing: 2px; }
+      .lane-line { stroke: #1c3a49; stroke-width: 1; }
+      .card { fill: url(#panel); stroke: #244454; stroke-width: 1.5; filter: url(#shadow); }
+      .card-title { fill: #edf7ff; font-size: 21px; font-weight: 750; text-anchor: middle; }
+      .card-detail { fill: #8ca5b5; font-size: 14px; text-anchor: middle; }
+      .pill { fill: #0a313a; stroke: #17606a; stroke-width: 1; }
+      .pill-text { fill: #55e1df; font-size: 12px; font-weight: 700; text-anchor: middle; }
+      .flow-label { fill: #b9cbd6; font-size: 13px; font-weight: 650; text-anchor: middle; }
+      .flow-detail { fill: #708b9b; font-size: 11px; text-anchor: middle; }
+      .cyan { fill: none; stroke: #2dd4d7; stroke-width: 3; marker-end: url(#arrow-cyan); }
+      .green { fill: none; stroke: #61e6a7; stroke-width: 3; marker-end: url(#arrow-green); }
+      .orange { fill: none; stroke: #f4aa3c; stroke-width: 3; marker-end: url(#arrow-orange); }
+      .blue { fill: none; stroke: #7aa7ff; stroke-width: 3; marker-end: url(#arrow-blue); }
+      .dash { stroke-dasharray: 8 7; }
+    </style>
+  </defs>
+  <rect width="1600" height="900" rx="24" fill="url(#background)"/>
+  <circle cx="1430" cy="90" r="210" fill="#0b3840" opacity="0.18"/><circle cx="120" cy="820" r="250" fill="#102b42" opacity="0.18"/>
+  <text class="title" x="70" y="66">Drilling Telemetry</text>
+  <text class="subtitle" x="70" y="94">Real-time acquisition, concurrent processing and operational visibility</text>
+
+  <text class="lane-title" x="70" y="146">OPERATOR EXPERIENCE</text><line class="lane-line" x1="270" y1="141" x2="1530" y2="141"/>
+  <rect class="card" x="70" y="175" width="300" height="130" rx="18"/><rect class="pill" x="160" y="195" width="120" height="25" rx="12"/>
+  <text class="pill-text" x="220" y="212">ANGULAR</text><text class="card-title" x="220" y="253">Operations Dashboard</text><text class="card-detail" x="220" y="278">live curves · events · controls</text>
+  <rect class="card" x="650" y="175" width="300" height="130" rx="18"/><rect class="pill" x="741" y="195" width="118" height="25" rx="12"/>
+  <text class="pill-text" x="800" y="212">ASP.NET CORE</text><text class="card-title" x="800" y="253">Control API</text><text class="card-detail" x="800" y="278">validates runtime settings</text>
+  <rect class="card" x="1230" y="175" width="300" height="130" rx="18"/><rect class="pill" x="1321" y="195" width="118" height="25" rx="12"/>
+  <text class="pill-text" x="1380" y="212">ASP.NET CORE</text><text class="card-title" x="1380" y="253">Processor API</text><text class="card-detail" x="1380" y="278">history · events · SignalR hub</text>
+  <path class="cyan" d="M370 224 H640"/><text class="flow-label" x="505" y="208">POST settings</text><text class="flow-detail" x="505" y="252">HTTP · immediate update</text>
+  <path class="blue" d="M370 190 C610 138 990 138 1220 190"/><text class="flow-label" x="800" y="143">query history &amp; events · HTTP</text>
+  <path class="green dash" d="M1230 288 C1010 346 590 346 370 288"/><text class="flow-label" x="1080" y="326">broadcast live telemetry · SignalR</text>
+
+  <text class="lane-title" x="70" y="374">MESSAGE TRANSPORT &amp; ACQUISITION</text><line class="lane-line" x1="365" y1="369" x2="1530" y2="369"/>
+  <rect class="card" x="70" y="410" width="300" height="145" rx="18"/><rect class="pill" x="162" y="430" width="116" height="25" rx="12"/>
+  <text class="pill-text" x="220" y="447">.NET WORKER</text><text class="card-title" x="220" y="493">Device Simulator</text><text class="card-detail" x="220" y="518">multiple devices · one acquisition run</text>
+  <rect class="card" x="650" y="402" width="300" height="82" rx="18"/><text class="card-title" x="800" y="437">Settings exchange</text><text class="card-detail" x="800" y="462">fanout · ephemeral subscriber queue</text>
+  <rect class="card" x="650" y="510" width="300" height="82" rx="18"/><text class="card-title" x="800" y="545">Telemetry queue</text><text class="card-detail" x="800" y="570">durable · publisher confirms</text>
+  <rect class="card" x="1230" y="410" width="300" height="145" rx="18"/><rect class="pill" x="1305" y="430" width="150" height="25" rx="12"/>
+  <text class="pill-text" x="1380" y="447">4 CONSUMERS</text><text class="card-title" x="1380" y="493">Telemetry Processor</text><text class="card-detail" x="1380" y="518">validate · order · deduplicate</text>
+  <path class="cyan" d="M800 305 V392"/><text class="flow-label" x="875" y="360">publish settings</text>
+  <path class="cyan" d="M650 443 H380"/><text class="flow-label" x="515" y="427">fanout delivery</text>
+  <path class="green" d="M370 520 H640"/><text class="flow-label" x="505" y="504">publish readings</text><text class="flow-detail" x="505" y="546">JSON · persistent messages</text>
+  <path class="orange" d="M950 551 H1220"/><text class="flow-label" x="1085" y="535">competing consumers</text><text class="flow-detail" x="1085" y="577">prefetch 50 · manual ACK/NACK</text>
+
+  <text class="lane-title" x="70" y="656">PERSISTENCE &amp; FAILURE HANDLING</text><line class="lane-line" x1="355" y1="651" x2="1530" y2="651"/>
+  <rect class="card" x="430" y="700" width="300" height="125" rx="18"/><rect class="pill" x="521" y="720" width="118" height="25" rx="12"/>
+  <text class="pill-text" x="580" y="737">POSTGRESQL</text><text class="card-title" x="580" y="779">Telemetry Storage</text><text class="card-detail" x="580" y="804">readings · operational events</text>
+  <rect class="card" x="870" y="700" width="300" height="125" rx="18" style="stroke:#80451d"/><rect x="964" y="720" width="112" height="25" rx="12" fill="#3b2614" stroke="#80451d"/>
+  <text x="1020" y="737" fill="#ffc56e" font-size="12" font-weight="700" text-anchor="middle">RABBITMQ</text><text class="card-title" x="1020" y="779">Dead-letter Queue</text><text class="card-detail" x="1020" y="804">invalid or conflicting messages</text>
+  <path class="blue" d="M1330 555 C1250 635 760 625 650 692"/><text class="flow-label" x="970" y="635">accepted → persist</text>
+  <path class="orange" d="M1430 555 C1415 685 1250 761 1180 761"/><text class="flow-label" x="1330" y="680">rejected → NACK</text>
+  <path class="green dash" d="M1380 410 V320"/><text class="flow-label" x="1465" y="354">broadcast accepted</text>
+  <text x="70" y="866" fill="#5f7c8c" font-size="12">Solid arrows: commands and messages · Dashed arrows: real-time notifications</text>
+  <g transform="translate(1315 851)"><circle cx="8" cy="8" r="5" fill="#61e6a7"/><text x="22" y="12" fill="#8ca5b5" font-size="12">accepted</text><circle cx="105" cy="8" r="5" fill="#f4aa3c"/><text x="119" y="12" fill="#8ca5b5" font-size="12">rejected</text></g>
+</svg>

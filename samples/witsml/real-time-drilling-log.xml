@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<logs xmlns="http://www.witsml.org/schemas/1series" version="1.4.1.1">
+  <log uidWell="ARCHER-A-07" uidWellbore="ARCHER-A-07-MAIN" uid="RT-DRILLING-LOG-001">
+    <nameWell>Archer A-07</nameWell>
+    <nameWellbore>A-07 Main</nameWellbore>
+    <name>Real-time drilling log</name>
+    <indexType>measured depth</indexType>
+    <indexCurve>DEPT</indexCurve>
+
+    <logCurveInfo>
+      <mnemonic>DEPT</mnemonic>
+      <unit>m</unit>
+      <nullValue>-999.25</nullValue>
+    </logCurveInfo>
+    <logCurveInfo>
+      <mnemonic>DTIM</mnemonic>
+      <unit>datetime</unit>
+      <nullValue>1900-01-01T00:00:00Z</nullValue>
+    </logCurveInfo>
+    <logCurveInfo>
+      <mnemonic>GR</mnemonic>
+      <unit>gAPI</unit>
+      <nullValue>-999.25</nullValue>
+    </logCurveInfo>
+    <logCurveInfo>
+      <mnemonic>SPP</mnemonic>
+      <unit>psi</unit>
+      <nullValue>-999.25</nullValue>
+    </logCurveInfo>
+    <logCurveInfo>
+      <mnemonic>TEMP</mnemonic>
+      <unit>degC</unit>
+      <nullValue>-999.25</nullValue>
+    </logCurveInfo>
+
+    <logData>
+      <mnemonicList>DEPT,DTIM,GR,SPP,TEMP</mnemonicList>
+      <unitList>m,datetime,gAPI,psi,degC</unitList>
+      <data>1000.0,2024-06-15T08:00:00Z,72.5,8200,105.0</data>
+      <data>1000.5,2024-06-15T08:01:00Z,74.1,8210,105.4</data>
+      <data>1001.0,2024-06-15T08:02:00Z,71.8,8195,105.8</data>
+      <data>1001.5,2024-06-15T08:03:00Z,78.3,8230,106.2</data>
+      <data>1002.0,2024-06-15T08:04:00Z,80.0,8245,106.6</data>
+      <data>1002.5,2024-06-15T08:05:00Z,76.4,8220,107.0</data>
+      <data>1003.0,2024-06-15T08:06:00Z,69.7,8185,107.4</data>
+      <data>1003.5,2024-06-15T08:07:00Z,65.2,8170,107.8</data>
+      <data>1004.0,2024-06-15T08:08:00Z,62.8,8160,108.2</data>
+      <data>1004.5,2024-06-15T08:09:00Z,68.5,8190,108.6</data>
+    </logData>
+  </log>
+</logs>
