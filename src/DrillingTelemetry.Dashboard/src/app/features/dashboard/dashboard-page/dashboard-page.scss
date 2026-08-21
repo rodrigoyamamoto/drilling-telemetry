@@ -37,6 +37,12 @@ h1 {
 }
 
 .topbar__status {
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+}
+
+.topbar__badges {
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -91,8 +97,12 @@ h1 {
 }
 
 .last-update {
+  min-width: 18rem;
   color: var(--subtle);
   font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .asset-context {
@@ -159,26 +169,6 @@ h1 {
   font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-}
-
-.secondary-button {
-  border: 0;
-  cursor: pointer;
-}
-
-.secondary-button {
-  padding: 0.65rem 0.85rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 0.55rem;
-  background: transparent;
-  color: #cbd8e2;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.secondary-button:hover {
-  border-color: rgba(50, 214, 208, 0.5);
-  color: var(--cyan);
 }
 
 .metric-grid {
@@ -335,10 +325,6 @@ h1 {
   margin-bottom: 1rem;
 }
 
-.lower-grid {
-  grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
-}
-
 @media (max-width: 76rem) {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -361,8 +347,7 @@ h1 {
   }
 
   .topbar__status {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-items: end;
   }
 
   .environment-badge,

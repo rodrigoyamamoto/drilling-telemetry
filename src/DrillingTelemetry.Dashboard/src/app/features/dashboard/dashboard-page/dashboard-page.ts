@@ -156,7 +156,7 @@ export class DashboardPage {
     const state = this.readingState();
 
     if (this.displayedReadings().length > 0) {
-      return this.liveConnectionStatus() === 'connected' ? 'Live sample' : 'Latest sample';
+      return this.liveConnectionStatus() === 'connected' ? 'Live reading' : 'Latest reading';
     }
 
     switch (state.status) {
@@ -218,8 +218,12 @@ export class DashboardPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (deviceIds) => {
-          this.deviceIds.set(deviceIds);
-          this.selectAvailableDevice(deviceIds);
+          this.deviceIds.update((currentDeviceIds) =>
+            [...new Set([...currentDeviceIds, ...deviceIds])].sort((left, right) =>
+              left.localeCompare(right),
+            ),
+          );
+          this.selectAvailableDevice(this.deviceIds());
           this.isLoadingDevices.set(false);
         },
         error: (error: HttpErrorResponse) => {
@@ -310,6 +314,14 @@ export class DashboardPage {
   }
 
   private receiveLiveReading(reading: TelemetryReading): void {
+    this.deviceIds.update((deviceIds) => {
+      if (deviceIds.includes(reading.deviceId)) {
+        return deviceIds;
+      }
+
+      return [...deviceIds, reading.deviceId].sort((left, right) => left.localeCompare(right));
+    });
+
     if (reading.deviceId !== this.selectedDeviceId()) {
       return;
     }

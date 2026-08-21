@@ -24,7 +24,7 @@
             <small>{{ getDescription(operationalEvent) }}</small>
           </div>
           <time [attr.datetime]="operationalEvent.occurredAtUtc">
-            {{ operationalEvent.occurredAtUtc | date: 'HH:mm:ss' : 'UTC' }}
+            {{ operationalEvent.occurredAtUtc | date: 'dd MMM yyyy, HH:mm:ss' : 'UTC' }} UTC
           </time>
         </li>
       }
@@ -40,7 +40,9 @@
   } @else if (errorMessage()) {
     <div class="events-state events-state--error">
       <span class="events-state__marker" aria-hidden="true">!</span>
-      <div><strong>Events unavailable</strong><small>{{ errorMessage() }}</small></div>
+      <div>
+        <strong>Events unavailable</strong><small>{{ errorMessage() }}</small>
+      </div>
       <button class="text-button" type="button" (click)="retryRequested.emit()">Retry</button>
     </div>
   } @else {

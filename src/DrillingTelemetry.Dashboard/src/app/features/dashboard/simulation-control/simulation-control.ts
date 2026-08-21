@@ -1,18 +1,7 @@
 import type { HttpErrorResponse } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import { SimulationControlService } from '../data-access/simulation-control.service';
@@ -36,7 +25,7 @@ const initialDepthChangeRateMetresPerHour = 18;
   imports: [ReactiveFormsModule],
   templateUrl: './simulation-control.html',
   styleUrl: './simulation-control.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SimulationControl {
   private readonly destroyRef = inject(DestroyRef);
@@ -46,37 +35,31 @@ export class SimulationControl {
   protected readonly settingsForm = new FormGroup({
     deviceIdentifiers: new FormControl(initialDeviceIdentifiers, {
       nonNullable: true,
-      validators: [Validators.required]
+      validators: [Validators.required],
     }),
-    publishingIntervalMilliseconds: new FormControl(
-      initialPublishingIntervalMilliseconds,
-      {
-        nonNullable: true,
-        validators: [
-          Validators.required,
-          Validators.min(minimumPublishingIntervalMilliseconds),
-          Validators.max(maximumPublishingIntervalMilliseconds)
-        ]
-      }
-    ),
+    publishingIntervalMilliseconds: new FormControl(initialPublishingIntervalMilliseconds, {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.min(minimumPublishingIntervalMilliseconds),
+        Validators.max(maximumPublishingIntervalMilliseconds),
+      ],
+    }),
     drillingOperation: new FormControl(DrillingOperation.DrillingAhead, {
       nonNullable: true,
-      validators: [Validators.required]
+      validators: [Validators.required],
     }),
-    depthChangeRateMetresPerHour: new FormControl(
-      initialDepthChangeRateMetresPerHour,
-      {
-        nonNullable: true,
-        validators: [Validators.required]
-      }
-    )
+    depthChangeRateMetresPerHour: new FormControl(initialDepthChangeRateMetresPerHour, {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
   });
 
   /** Operations offered by the runtime control. */
   protected readonly drillingOperations = [
     { value: DrillingOperation.DrillingAhead, label: 'Drilling ahead' },
     { value: DrillingOperation.Stationary, label: 'Stationary' },
-    { value: DrillingOperation.TrippingOut, label: 'Tripping out' }
+    { value: DrillingOperation.TrippingOut, label: 'Tripping out' },
   ] as const;
 
   /** Operation values used by the template guidance. */
@@ -98,13 +81,11 @@ export class SimulationControl {
   protected readonly hasChanges = signal(true);
 
   constructor() {
-    this.settingsForm.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.hasChanges.set(true);
-        this.updateStatus.set('idle');
-        this.updateMessage.set(null);
-      });
+    this.settingsForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.hasChanges.set(true);
+      this.updateStatus.set('idle');
+      this.updateMessage.set(null);
+    });
   }
 
   /** Sends the validated settings to the Control API. */
@@ -114,26 +95,22 @@ export class SimulationControl {
     }
 
     const deviceIds = this.parseDeviceIdentifiers(
-      this.settingsForm.controls.deviceIdentifiers.value
+      this.settingsForm.controls.deviceIdentifiers.value,
     );
 
-    const drillingOperation =
-      this.settingsForm.controls.drillingOperation.value;
+    const drillingOperation = this.settingsForm.controls.drillingOperation.value;
     const depthChangeRateMetresPerHour =
       this.settingsForm.controls.depthChangeRateMetresPerHour.value;
 
     if (
       this.settingsForm.invalid ||
       deviceIds.length === 0 ||
-      !this.isOperationRateValid(
-        drillingOperation,
-        depthChangeRateMetresPerHour
-      )
+      !this.isOperationRateValid(drillingOperation, depthChangeRateMetresPerHour)
     ) {
       this.settingsForm.markAllAsTouched();
       this.updateStatus.set('error');
       this.updateMessage.set(
-        'Provide valid devices, interval, operation and signed depth-change rate.'
+        'Provide valid devices, interval, operation and signed depth-change rate.',
       );
       return;
     }
@@ -147,7 +124,7 @@ export class SimulationControl {
         publishingIntervalMilliseconds:
           this.settingsForm.controls.publishingIntervalMilliseconds.value,
         drillingOperation,
-        depthChangeRateMetresPerHour
+        depthChangeRateMetresPerHour,
       })
       .pipe(
         finalize(() => {
@@ -155,33 +132,37 @@ export class SimulationControl {
             this.updateStatus.set('idle');
           }
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: () => {
           this.hasChanges.set(false);
           this.updateStatus.set('accepted');
-          this.updateMessage.set('Update accepted by the Control API.');
+          this.updateMessage.set(
+            'Settings accepted. New devices appear after their first reading.',
+          );
         },
         error: (error: HttpErrorResponse) => {
           this.updateStatus.set('error');
           this.updateMessage.set(this.getErrorMessage(error));
-        }
+        },
       });
   }
 
   private parseDeviceIdentifiers(value: string): readonly string[] {
-    return [...new Set(
-      value
-        .split(/[\n,]+/u)
-        .map(deviceId => deviceId.trim())
-        .filter(deviceId => deviceId.length > 0)
-    )];
+    return [
+      ...new Set(
+        value
+          .split(/[\n,]+/u)
+          .map((deviceId) => deviceId.trim())
+          .filter((deviceId) => deviceId.length > 0),
+      ),
+    ];
   }
 
   private isOperationRateValid(
     drillingOperation: DrillingOperation,
-    depthChangeRateMetresPerHour: number
+    depthChangeRateMetresPerHour: number,
   ): boolean {
     if (!Number.isFinite(depthChangeRateMetresPerHour)) {
       return false;

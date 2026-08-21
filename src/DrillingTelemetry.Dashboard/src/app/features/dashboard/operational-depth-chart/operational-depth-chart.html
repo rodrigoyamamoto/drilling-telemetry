@@ -5,7 +5,7 @@
       <h2>Measured depth over time</h2>
     </div>
 
-    <span class="sample-count"> {{ readings().length | number: '1.0-0' }} samples </span>
+    <span class="sample-count"> {{ readings().length | number: '1.0-0' }} readings </span>
   </div>
 
   <div class="depth-summary" aria-live="polite">
@@ -74,7 +74,7 @@
       <div class="chart-state" role="status">
         <span class="chart-spinner" aria-hidden="true"></span>
         <strong>Loading depth history</strong>
-        <small>Retrieving the most recent persisted samples.</small>
+        <small>Retrieving the most recent persisted readings.</small>
       </div>
     } @else if (errorMessage(); as error) {
       <div class="chart-state chart-state--error" role="alert">
@@ -86,7 +86,7 @@
       <div class="chart-state" role="status">
         <span class="chart-state__icon" aria-hidden="true">0</span>
         <strong>No depth readings</strong>
-        <small>The selected device has no persisted telemetry samples.</small>
+        <small>The selected device has no persisted telemetry readings.</small>
       </div>
     }
   </div>
