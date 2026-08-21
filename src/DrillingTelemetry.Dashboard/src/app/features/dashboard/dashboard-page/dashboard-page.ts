@@ -20,6 +20,7 @@ import type { TelemetryMetrics } from '../data-access/telemetry-metrics';
 import type { TelemetryReading } from '../data-access/telemetry-reading';
 import { TelemetryLiveService } from '../data-access/telemetry-live.service';
 import { DeviceList } from '../device-list/device-list';
+import { GammaRayChart } from '../gamma-ray-chart/gamma-ray-chart';
 import { OperationalEventsPanel } from '../operational-events-panel/operational-events-panel';
 import { OperationalDepthChart } from '../operational-depth-chart/operational-depth-chart';
 import { SimulationControl } from '../simulation-control/simulation-control';
@@ -49,6 +50,7 @@ const maximumOperationalEvents = 20;
     DatePipe,
     DecimalPipe,
     DeviceList,
+    GammaRayChart,
     OperationalDepthChart,
     OperationalEventsPanel,
     SimulationControl,
@@ -113,24 +115,24 @@ export class DashboardPage {
   /** Most recent reading available to the dashboard. */
   protected readonly latestReading = computed(() => this.displayedReadings().at(-1) ?? null);
 
-  /** Identifier of the acquisition session currently displayed. */
-  protected readonly activeAcquisitionSessionId = computed(
+  /** Identifier of the acquisition run currently displayed. */
+  protected readonly activeAcquisitionRunId = computed(
     () => this.latestReading()?.acquisitionSessionId ?? null,
   );
 
-  /** Short, human-readable label for the active acquisition session. */
-  protected readonly activeAcquisitionSessionLabel = computed(() => {
-    const sessionId = this.activeAcquisitionSessionId();
+  /** Short, human-readable label for the active acquisition run. */
+  protected readonly activeAcquisitionRunLabel = computed(() => {
+    const runId = this.activeAcquisitionRunId();
 
-    return sessionId ? sessionId.slice(0, 8).toUpperCase() : '—';
+    return runId ? runId.slice(0, 8).toUpperCase() : '—';
   });
 
-  /** Compact identifier displayed beside the active well. */
+  /** Compact name-derived label displayed beside the active well. */
   protected readonly wellMonogram = computed(() => {
-    const wellId = this.latestReading()?.wellId;
+    const wellName = this.latestReading()?.wellName;
 
-    return wellId
-      ? wellId
+    return wellName
+      ? wellName
           .replaceAll(/[^a-zA-Z0-9]/g, '')
           .slice(-2)
           .toUpperCase()

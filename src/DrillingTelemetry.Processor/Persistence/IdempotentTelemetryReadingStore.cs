@@ -20,16 +20,19 @@ internal sealed class IdempotentTelemetryReadingStore
             acquisition_session_id,
             sequence_number,
             well_id,
+            well_name,
             wellbore_id,
+            wellbore_name,
             measured_depth_metres,
             drilling_operation,
             depth_change_rate_metres_per_hour,
             pressure_psi,
             temperature_celsius,
+            gamma_ray_api,
             timestamp_utc,
             payload
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         ON CONFLICT
         (
             device_id,
@@ -133,7 +136,21 @@ internal sealed class IdempotentTelemetryReadingStore
             new NpgsqlParameter
             {
                 NpgsqlDbType = NpgsqlDbType.Text,
+                Value = reading.WellName
+            });
+
+        command.Parameters.Add(
+            new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.Text,
                 Value = reading.WellboreId
+            });
+
+        command.Parameters.Add(
+            new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.Text,
+                Value = reading.WellboreName
             });
 
         command.Parameters.Add(
@@ -169,6 +186,13 @@ internal sealed class IdempotentTelemetryReadingStore
             {
                 NpgsqlDbType = NpgsqlDbType.Double,
                 Value = reading.TemperatureCelsius
+            });
+
+        command.Parameters.Add(
+            new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.Double,
+                Value = reading.GammaRayApi
             });
 
         command.Parameters.Add(

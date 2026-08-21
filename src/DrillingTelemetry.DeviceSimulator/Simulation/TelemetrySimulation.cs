@@ -82,12 +82,15 @@ internal sealed class TelemetrySimulation
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            TelemetryReading reading = _readingGenerator.Generate(deviceId);
+            TelemetryReading reading = _readingGenerator.Generate(
+                deviceId,
+                measuredDepthMetres);
             reading.AcquisitionSessionId = _acquisitionSessionId;
             reading.SequenceNumber = GetNextSequenceNumber(deviceId);
             reading.WellId = _drillingContext.WellId;
+            reading.WellName = _drillingContext.WellName;
             reading.WellboreId = _drillingContext.WellboreId;
-            reading.MeasuredDepthMetres = measuredDepthMetres;
+            reading.WellboreName = _drillingContext.WellboreName;
             reading.DrillingOperation = settings.DrillingOperation;
             reading.DepthChangeRateMetresPerHour =
                 settings.DepthChangeRateMetresPerHour;

@@ -5,7 +5,7 @@ import {
   computed,
   effect,
   input,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import type { ElementRef, OnDestroy } from '@angular/core';
 import {
@@ -16,7 +16,7 @@ import {
   LineController,
   LineElement,
   PointElement,
-  Tooltip
+  Tooltip,
 } from 'chart.js';
 import type { ChartConfiguration, ChartData } from 'chart.js';
 
@@ -29,7 +29,7 @@ Chart.register(
   LineController,
   LineElement,
   PointElement,
-  Tooltip
+  Tooltip,
 );
 
 const chartColours = {
@@ -37,7 +37,7 @@ const chartColours = {
   border: 'rgba(143, 163, 181, 0.12)',
   cyan: '#32d6d0',
   muted: '#8fa3b5',
-  surface: '#0c1721'
+  surface: '#0c1721',
 } as const;
 
 /** Displays persisted pressure and temperature trends. */
@@ -46,7 +46,7 @@ const chartColours = {
   imports: [DatePipe, DecimalPipe],
   templateUrl: './telemetry-chart.html',
   styleUrl: './telemetry-chart.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TelemetryChart implements OnDestroy {
   private readonly chartCanvas = viewChild<ElementRef<HTMLCanvasElement>>('chartCanvas');
@@ -55,7 +55,7 @@ export class TelemetryChart implements OnDestroy {
     hourCycle: 'h23',
     minute: '2-digit',
     second: '2-digit',
-    timeZone: 'UTC'
+    timeZone: 'UTC',
   });
 
   private chart: Chart<'line'> | null = null;
@@ -100,17 +100,15 @@ export class TelemetryChart implements OnDestroy {
     this.chart?.destroy();
   }
 
-  private createConfiguration(
-    readings: readonly TelemetryReading[]
-  ): ChartConfiguration<'line'> {
+  private createConfiguration(readings: readonly TelemetryReading[]): ChartConfiguration<'line'> {
     return {
       type: 'line',
       data: this.createChartData(readings),
       options: {
-        animation: { duration: 300 },
+        animation: false,
         interaction: {
           intersect: false,
-          mode: 'index'
+          mode: 'index',
         },
         maintainAspectRatio: false,
         plugins: {
@@ -121,8 +119,8 @@ export class TelemetryChart implements OnDestroy {
             borderWidth: 1,
             displayColors: true,
             padding: 12,
-            titleColor: '#e7f0f6'
-          }
+            titleColor: '#e7f0f6',
+          },
         },
         responsive: true,
         scales: {
@@ -132,8 +130,8 @@ export class TelemetryChart implements OnDestroy {
               autoSkip: true,
               color: chartColours.muted,
               maxRotation: 0,
-              maxTicksLimit: 6
-            }
+              maxTicksLimit: 6,
+            },
           },
           pressure: {
             grid: { color: chartColours.border },
@@ -142,8 +140,8 @@ export class TelemetryChart implements OnDestroy {
             title: {
               color: chartColours.cyan,
               display: true,
-              text: 'Pressure (psi)'
-            }
+              text: 'Pressure (psi)',
+            },
           },
           temperature: {
             grid: { drawOnChartArea: false },
@@ -152,11 +150,11 @@ export class TelemetryChart implements OnDestroy {
             title: {
               color: chartColours.amber,
               display: true,
-              text: 'Temperature (°C)'
-            }
-          }
-        }
-      }
+              text: 'Temperature (°C)',
+            },
+          },
+        },
+      },
     };
   }
 
@@ -164,32 +162,32 @@ export class TelemetryChart implements OnDestroy {
     const pointRadius = readings.length === 1 ? 3 : 0;
 
     return {
-      labels: readings.map(reading => this.formatTimestamp(reading.timestampUtc)),
+      labels: readings.map((reading) => this.formatTimestamp(reading.timestampUtc)),
       datasets: [
         {
           backgroundColor: 'rgba(50, 214, 208, 0.08)',
           borderColor: chartColours.cyan,
           borderWidth: 2,
-          data: readings.map(reading => reading.pressurePsi),
+          data: readings.map((reading) => reading.pressurePsi),
           fill: true,
           label: 'Pressure (psi)',
           pointHoverRadius: 4,
           pointRadius,
           tension: 0.25,
-          yAxisID: 'pressure'
+          yAxisID: 'pressure',
         },
         {
           borderColor: chartColours.amber,
           borderWidth: 2,
-          data: readings.map(reading => reading.temperatureCelsius),
+          data: readings.map((reading) => reading.temperatureCelsius),
           fill: false,
           label: 'Temperature (°C)',
           pointHoverRadius: 4,
           pointRadius,
           tension: 0.25,
-          yAxisID: 'temperature'
-        }
-      ]
+          yAxisID: 'temperature',
+        },
+      ],
     };
   }
 
@@ -203,7 +201,7 @@ export class TelemetryChart implements OnDestroy {
     this.chart.data.labels = data.labels;
     this.chart.data.datasets[0].data = data.datasets[0].data;
     this.chart.data.datasets[1].data = data.datasets[1].data;
-    this.chart.update();
+    this.chart.update('none');
   }
 
   private formatTimestamp(timestampUtc: string): string {

@@ -32,14 +32,14 @@
       <span class="asset-monogram" aria-hidden="true">{{ wellMonogram() }}</span>
       <div>
         <span class="field-label">Active well</span>
-        <strong>{{ latestReading()?.wellId ?? 'Waiting for telemetry' }}</strong>
+        <strong>{{ latestReading()?.wellName ?? '—' }}</strong>
       </div>
     </div>
 
     <dl class="context-details">
       <div>
         <dt>Wellbore</dt>
-        <dd>{{ latestReading()?.wellboreId ?? '—' }}</dd>
+        <dd>{{ latestReading()?.wellboreName ?? '—' }}</dd>
       </div>
       <div>
         <dt>Operation</dt>
@@ -56,9 +56,9 @@
         </dd>
       </div>
       <div>
-        <dt>Acquisition session</dt>
-        <dd [attr.title]="activeAcquisitionSessionId() ?? ''">
-          {{ activeAcquisitionSessionLabel() }}
+        <dt>Acquisition run</dt>
+        <dd [attr.title]="activeAcquisitionRunId() ?? ''">
+          {{ activeAcquisitionRunLabel() }}
         </dd>
       </div>
       <div>
@@ -172,12 +172,18 @@
     </article>
   </section>
 
-  <section class="depth-section" aria-label="Operational depth trend">
+  <section class="drilling-curves-grid" aria-label="Operational depth and gamma ray curves">
     <app-operational-depth-chart
       [readings]="displayedReadings()"
       [selectedDeviceId]="selectedDeviceId()"
       [operation]="latestReading()?.drillingOperation ?? null"
       [operationLabel]="drillingOperationLabel()"
+      [isLoading]="readingState().status === 'loading' && displayedReadings().length === 0"
+      [errorMessage]="displayedReadings().length === 0 ? readingState().errorMessage : null"
+    />
+    <app-gamma-ray-chart
+      [readings]="displayedReadings()"
+      [selectedDeviceId]="selectedDeviceId()"
       [isLoading]="readingState().status === 'loading' && displayedReadings().length === 0"
       [errorMessage]="displayedReadings().length === 0 ? readingState().errorMessage : null"
     />

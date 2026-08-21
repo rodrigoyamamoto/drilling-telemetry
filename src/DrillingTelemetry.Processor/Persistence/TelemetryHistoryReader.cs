@@ -34,12 +34,15 @@ internal sealed class TelemetryHistoryReader
                 acquisition_session_id,
                 sequence_number,
                 well_id,
+                well_name,
                 wellbore_id,
+                wellbore_name,
                 measured_depth_metres,
                 drilling_operation,
                 depth_change_rate_metres_per_hour,
                 pressure_psi,
                 temperature_celsius,
+                gamma_ray_api,
                 timestamp_utc
             FROM telemetry_readings
             WHERE device_id = @DeviceId
@@ -53,12 +56,15 @@ internal sealed class TelemetryHistoryReader
             acquisition_session_id AS "AcquisitionSessionId",
             sequence_number AS "SequenceNumber",
             well_id AS "WellId",
+            well_name AS "WellName",
             wellbore_id AS "WellboreId",
+            wellbore_name AS "WellboreName",
             measured_depth_metres AS "MeasuredDepthMetres",
             drilling_operation AS "DrillingOperation",
             depth_change_rate_metres_per_hour AS "DepthChangeRateMetresPerHour",
             pressure_psi AS "PressurePsi",
             temperature_celsius AS "TemperatureCelsius",
+            gamma_ray_api AS "GammaRayApi",
             timestamp_utc AS "TimestampUtc"
         FROM recent_readings
         ORDER BY timestamp_utc, sequence_number;

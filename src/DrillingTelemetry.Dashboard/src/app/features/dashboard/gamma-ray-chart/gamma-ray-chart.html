@@ -1,0 +1,79 @@
+<article class="panel gamma-ray-panel">
+  <div class="panel-header">
+    <div>
+      <p class="section-kicker">LWD curve</p>
+      <h2>Gamma ray</h2>
+    </div>
+
+    <span class="sample-count"> {{ readings().length | number: '1.0-0' }} readings </span>
+  </div>
+
+  <div class="gamma-ray-summary" aria-live="polite">
+    <dl class="gamma-ray-metrics" aria-label="Current gamma ray values">
+      <div>
+        <dt>Gamma ray</dt>
+        <dd>
+          @if (latestReading(); as reading) {
+            {{ reading.gammaRayApi | number: '1.1-1' }} gAPI
+          } @else {
+            —
+          }
+        </dd>
+      </div>
+      <div>
+        <dt>Measured depth</dt>
+        <dd>
+          @if (latestReading(); as reading) {
+            {{ reading.measuredDepthMetres | number: '1.1-1' }} m
+          } @else {
+            —
+          }
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="chart-frame" [attr.aria-busy]="isLoading()">
+    <canvas
+      #chartCanvas
+      role="img"
+      [attr.aria-label]="
+        'Gamma ray by measured depth for ' + (selectedDeviceId() ?? 'the selected device')
+      "
+    ></canvas>
+
+    @if (!selectedDeviceId()) {
+      <div class="chart-state" role="status">
+        <span class="chart-state__icon" aria-hidden="true">—</span>
+        <strong>Select a device</strong>
+        <small>Choose a telemetry source to view the gamma ray curve.</small>
+      </div>
+    } @else if (isLoading()) {
+      <div class="chart-state" role="status">
+        <span class="chart-spinner" aria-hidden="true"></span>
+        <strong>Loading gamma ray history</strong>
+        <small>Retrieving the most recent persisted readings.</small>
+      </div>
+    } @else if (errorMessage(); as error) {
+      <div class="chart-state chart-state--error" role="alert">
+        <span class="chart-state__icon" aria-hidden="true">!</span>
+        <strong>History unavailable</strong>
+        <small>{{ error }}</small>
+      </div>
+    } @else if (!hasReadings()) {
+      <div class="chart-state" role="status">
+        <span class="chart-state__icon" aria-hidden="true">0</span>
+        <strong>No gamma ray readings</strong>
+        <small>The selected device has no persisted telemetry readings.</small>
+      </div>
+    }
+  </div>
+
+  <footer class="chart-footer">
+    <span>Gamma ray by depth · well-log curve</span>
+    <span class="chart-footer__device">{{ selectedDeviceId() ?? 'No device selected' }}</span>
+    @if (latestReading(); as reading) {
+      <span>{{ reading.timestampUtc | date: 'dd MMM yyyy, HH:mm:ss' : 'UTC' }} UTC</span>
+    }
+  </footer>
+</article>

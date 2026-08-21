@@ -4,12 +4,15 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
     acquisition_session_id uuid           NOT NULL,
     sequence_number      bigint           NOT NULL,
     well_id              text             NOT NULL,
+    well_name            text             NOT NULL,
     wellbore_id          text             NOT NULL,
+    wellbore_name        text             NOT NULL,
     measured_depth_metres double precision NOT NULL,
     drilling_operation   text             NOT NULL,
     depth_change_rate_metres_per_hour double precision NOT NULL,
     pressure_psi         double precision NOT NULL,
     temperature_celsius  double precision NOT NULL,
+    gamma_ray_api        double precision NOT NULL,
     timestamp_utc        timestamp with time zone NOT NULL,
     payload              jsonb            NOT NULL,
     received_at_utc      timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,6 +60,13 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
                 AND depth_change_rate_metres_per_hour > 0)
             OR (drilling_operation = 'TrippingOut'
                 AND depth_change_rate_metres_per_hour < 0))
+        ),
+
+    CONSTRAINT ck_telemetry_readings_gamma_ray_api
+        CHECK
+        (
+            gamma_ray_api >= 0
+            AND gamma_ray_api < 'Infinity'::double precision
         )
 );
 

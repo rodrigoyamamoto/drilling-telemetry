@@ -35,9 +35,19 @@ internal sealed class SimulationOptions
     public string WellId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the name of the simulated well.
+    /// </summary>
+    public string WellName { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the identifier of the simulated wellbore.
     /// </summary>
     public string WellboreId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the name of the simulated wellbore.
+    /// </summary>
+    public string WellboreName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the initial measured depth, in metres.
@@ -84,4 +94,33 @@ internal sealed class SimulationOptions
     /// Gets or sets the maximum temperature used by random generation.
     /// </summary>
     public double MaximumTemperatureCelsius { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gamma ray value, in gAPI, used by fixed generation.
+    /// </summary>
+    public double FixedGammaRayApi { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum gamma ray value, in gAPI, used by random
+    /// generation.
+    /// </summary>
+    public double MinimumGammaRayApi { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum gamma ray value, in gAPI, used by random
+    /// generation.
+    /// </summary>
+    public double MaximumGammaRayApi { get; set; }
+
+    /// <summary>
+    /// Gets or sets the formation wavelength, in metres, used to produce a
+    /// depth-correlated synthetic gamma ray profile.
+    /// </summary>
+    public double GammaRayFormationWavelengthMetres { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum noise, in gAPI, applied around the synthetic
+    /// gamma ray formation value.
+    /// </summary>
+    public double MaximumGammaRayNoiseApi { get; set; }
 }

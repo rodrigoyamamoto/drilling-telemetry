@@ -69,8 +69,16 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                 "A well identifier must be configured.")
             .Validate(
                 options =>
+                    !string.IsNullOrWhiteSpace(options.WellName),
+                "A well name must be configured.")
+            .Validate(
+                options =>
                     !string.IsNullOrWhiteSpace(options.WellboreId),
                 "A wellbore identifier must be configured.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(options.WellboreName),
+                "A wellbore name must be configured.")
             .Validate(
                 options =>
                     double.IsFinite(
@@ -103,6 +111,35 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                     options.MinimumTemperatureCelsius <
                     options.MaximumTemperatureCelsius,
                 "Random temperature range is invalid.")
+            .Validate(
+                options =>
+                    double.IsFinite(options.FixedGammaRayApi) &&
+                    options.FixedGammaRayApi >= 0,
+                "Fixed gamma ray must be finite and not negative.")
+            .Validate(
+                options =>
+                    double.IsFinite(options.MinimumGammaRayApi) &&
+                    double.IsFinite(options.MaximumGammaRayApi) &&
+                    options.MinimumGammaRayApi >= 0 &&
+                    options.MinimumGammaRayApi <
+                        options.MaximumGammaRayApi,
+                "Random gamma ray range is invalid.")
+            .Validate(
+                options =>
+                    double.IsFinite(
+                        options.GammaRayFormationWavelengthMetres) &&
+                    options.GammaRayFormationWavelengthMetres > 0,
+                "Gamma ray formation wavelength must be finite and " +
+                "greater than zero.")
+            .Validate(
+                options =>
+                    double.IsFinite(options.MaximumGammaRayNoiseApi) &&
+                    options.MaximumGammaRayNoiseApi >= 0 &&
+                    options.MaximumGammaRayNoiseApi <
+                        (options.MaximumGammaRayApi -
+                            options.MinimumGammaRayApi) / 2,
+                "Gamma ray noise must be finite, non-negative and " +
+                "less than half the configured gamma ray range.")
             .ValidateOnStart();
 
         services.AddSingleton(TimeProvider.System);
@@ -166,7 +203,9 @@ internal static class DeviceSimulatorServiceCollectionExtensions
 
         return new SimulationDrillingContext(
             options.WellId,
+            options.WellName,
             options.WellboreId,
+            options.WellboreName,
             options.InitialMeasuredDepthMetres);
     }
 
@@ -195,7 +234,8 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                 new FixedTelemetryReadingGenerator(
                     timeProvider,
                     options.FixedPressurePsi,
-                    options.FixedTemperatureCelsius),
+                    options.FixedTemperatureCelsius,
+                    options.FixedGammaRayApi),
 
             TelemetryGenerationMode.Random =>
                 new RandomTelemetryReadingGenerator(
@@ -204,7 +244,11 @@ internal static class DeviceSimulatorServiceCollectionExtensions
                     options.MinimumPressurePsi,
                     options.MaximumPressurePsi,
                     options.MinimumTemperatureCelsius,
-                    options.MaximumTemperatureCelsius),
+                    options.MaximumTemperatureCelsius,
+                    options.MinimumGammaRayApi,
+                    options.MaximumGammaRayApi,
+                    options.GammaRayFormationWavelengthMetres,
+                    options.MaximumGammaRayNoiseApi),
 
             _ => throw new InvalidOperationException(
                 $"Unsupported generation mode " +

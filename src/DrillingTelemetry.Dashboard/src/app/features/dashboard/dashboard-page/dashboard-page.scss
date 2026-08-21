@@ -313,7 +313,10 @@ h1 {
   color: #8ca9ff;
 }
 
-.depth-section {
+.drilling-curves-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(18rem, 0.8fr);
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
@@ -335,6 +338,7 @@ h1 {
     row-gap: 0.75rem;
   }
 
+  .drilling-curves-grid,
   .main-grid,
   .lower-grid {
     grid-template-columns: 1fr;

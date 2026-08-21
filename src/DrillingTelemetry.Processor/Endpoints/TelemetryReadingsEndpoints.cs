@@ -127,12 +127,15 @@ internal static class TelemetryReadingsEndpoints
             reading.AcquisitionSessionId,
             reading.SequenceNumber,
             reading.WellId,
+            reading.WellName,
             reading.WellboreId,
+            reading.WellboreName,
             reading.MeasuredDepthMetres,
             reading.DrillingOperation,
             reading.DepthChangeRateMetresPerHour,
             reading.PressurePsi,
             reading.TemperatureCelsius,
+            reading.GammaRayApi,
             reading.TimestampUtc);
     }
 }

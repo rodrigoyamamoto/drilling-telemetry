@@ -21,6 +21,11 @@ public sealed class RandomTelemetryReadingGeneratorTests
         const double maximumPressurePsi = 9_000;
         const double minimumTemperatureCelsius = 100;
         const double maximumTemperatureCelsius = 140;
+        const double minimumGammaRayApi = 20;
+        const double maximumGammaRayApi = 150;
+        const double gammaRayFormationWavelengthMetres = 12;
+        const double maximumGammaRayNoiseApi = 2;
+        const double measuredDepthMetres = 3;
 
         var currentTimeUtc = new DateTimeOffset(
             year: 2026,
@@ -33,7 +38,7 @@ public sealed class RandomTelemetryReadingGeneratorTests
 
         var timeProvider = new FakeTimeProvider(currentTimeUtc);
 
-        var random = new SequenceRandom(0.25, 0.75);
+        var random = new SequenceRandom(0.25, 0.75, 0.5);
 
         var generator = new RandomTelemetryReadingGenerator(
             timeProvider,
@@ -41,15 +46,23 @@ public sealed class RandomTelemetryReadingGeneratorTests
             minimumPressurePsi,
             maximumPressurePsi,
             minimumTemperatureCelsius,
-            maximumTemperatureCelsius);
+            maximumTemperatureCelsius,
+            minimumGammaRayApi,
+            maximumGammaRayApi,
+            gammaRayFormationWavelengthMetres,
+            maximumGammaRayNoiseApi);
 
         // Act
-        TelemetryReading reading = generator.Generate(deviceId);
+        TelemetryReading reading = generator.Generate(
+            deviceId,
+            measuredDepthMetres);
 
         // Assert
         Assert.Equal(deviceId, reading.DeviceId);
+        Assert.Equal(measuredDepthMetres, reading.MeasuredDepthMetres);
         Assert.Equal(7_500, reading.PressurePsi);
         Assert.Equal(130, reading.TemperatureCelsius);
+        Assert.Equal(150, reading.GammaRayApi);
         Assert.Equal(currentTimeUtc, reading.TimestampUtc);
     }
 

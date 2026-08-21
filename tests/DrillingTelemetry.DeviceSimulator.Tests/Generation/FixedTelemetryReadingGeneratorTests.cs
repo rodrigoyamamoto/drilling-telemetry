@@ -19,6 +19,8 @@ public sealed class FixedTelemetryReadingGeneratorTests
         const string deviceId = "DRILL-001";
         const double pressurePsi = 8_250;
         const double temperatureCelsius = 117.5;
+        const double gammaRayApi = 65;
+        const double measuredDepthMetres = 2_847.6;
 
         var currentTimeUtc = new DateTimeOffset(
             year: 2026,
@@ -34,15 +36,18 @@ public sealed class FixedTelemetryReadingGeneratorTests
         var generator = new FixedTelemetryReadingGenerator(
             timeProvider,
             pressurePsi,
-            temperatureCelsius);
+            temperatureCelsius,
+            gammaRayApi);
 
         // Act
-        var reading = generator.Generate(deviceId);
+        var reading = generator.Generate(deviceId, measuredDepthMetres);
 
         // Assert
         Assert.Equal(deviceId, reading.DeviceId);
+        Assert.Equal(measuredDepthMetres, reading.MeasuredDepthMetres);
         Assert.Equal(pressurePsi, reading.PressurePsi);
         Assert.Equal(temperatureCelsius, reading.TemperatureCelsius);
+        Assert.Equal(gammaRayApi, reading.GammaRayApi);
         Assert.Equal(currentTimeUtc, reading.TimestampUtc);
     }
 }

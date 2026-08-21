@@ -21,6 +21,7 @@ public sealed class TelemetrySimulationTests
         // Arrange
         const double pressurePsi = 8_250;
         const double temperatureCelsius = 117.5;
+        const double gammaRayApi = 65;
 
         string[] deviceIds =
         [
@@ -43,7 +44,8 @@ public sealed class TelemetrySimulationTests
         var readingGenerator = new FixedTelemetryReadingGenerator(
             timeProvider,
             pressurePsi,
-            temperatureCelsius);
+            temperatureCelsius,
+            gammaRayApi);
 
         var readingPublisher = new RecordingTelemetryReadingPublisher();
 
@@ -82,6 +84,10 @@ public sealed class TelemetrySimulationTests
                 Assert.Equal(
                     temperatureCelsius,
                     reading.TemperatureCelsius);
+                Assert.Equal("TEST-WELL", reading.WellId);
+                Assert.Equal("Test Well", reading.WellName);
+                Assert.Equal("TEST-WELLBORE", reading.WellboreId);
+                Assert.Equal("Test Wellbore", reading.WellboreName);
                 Assert.Equal(currentTimeUtc, reading.TimestampUtc);
                 Assert.NotEqual(
                     Guid.Empty,
@@ -104,6 +110,7 @@ public sealed class TelemetrySimulationTests
         // Arrange
         const double pressurePsi = 8_250;
         const double temperatureCelsius = 117.5;
+        const double gammaRayApi = 65;
 
         string[] deviceIds =
         [
@@ -138,7 +145,8 @@ public sealed class TelemetrySimulationTests
         var readingGenerator = new FixedTelemetryReadingGenerator(
             timeProvider,
             pressurePsi,
-            temperatureCelsius);
+            temperatureCelsius,
+            gammaRayApi);
 
         var readingPublisher = new RecordingTelemetryReadingPublisher();
 
@@ -197,6 +205,7 @@ public sealed class TelemetrySimulationTests
         // Arrange
         const double pressurePsi = 8_250;
         const double temperatureCelsius = 117.5;
+        const double gammaRayApi = 65;
 
         string[] initialDeviceIds =
         [
@@ -267,7 +276,8 @@ public sealed class TelemetrySimulationTests
         var readingGenerator = new FixedTelemetryReadingGenerator(
             timeProvider,
             pressurePsi,
-            temperatureCelsius);
+            temperatureCelsius,
+            gammaRayApi);
 
         var readingPublisher =
             new RecordingTelemetryReadingPublisher();
@@ -334,7 +344,9 @@ public sealed class TelemetrySimulationTests
     {
         return new SimulationDrillingContext(
             "TEST-WELL",
+            "Test Well",
             "TEST-WELLBORE",
+            "Test Wellbore",
             measuredDepthMetres: 2_847.6);
     }
 

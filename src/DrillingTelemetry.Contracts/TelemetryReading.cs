@@ -11,7 +11,7 @@ public sealed class TelemetryReading
     public string DeviceId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the acquisition session that owns the sequence number.
+    /// Gets or sets the acquisition run that owns the sequence number.
     /// </summary>
     public Guid AcquisitionSessionId { get; set; }
 
@@ -26,9 +26,19 @@ public sealed class TelemetryReading
     public string WellId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the name of the well being drilled.
+    /// </summary>
+    public string WellName { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the identifier of the wellbore containing the tool.
     /// </summary>
     public string WellboreId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the name of the wellbore containing the tool.
+    /// </summary>
+    public string WellboreName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the distance travelled along the wellbore, in metres.
@@ -55,6 +65,11 @@ public sealed class TelemetryReading
     /// Gets or sets the temperature in degrees Celsius.
     /// </summary>
     public double TemperatureCelsius { get; set; }
+
+    /// <summary>
+    /// Gets or sets the natural gamma ray measurement, in gAPI.
+    /// </summary>
+    public double GammaRayApi { get; set; }
 
     /// <summary>
     /// Gets or sets the UTC timestamp of the reading.

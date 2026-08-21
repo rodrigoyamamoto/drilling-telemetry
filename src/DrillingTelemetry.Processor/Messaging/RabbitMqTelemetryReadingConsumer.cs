@@ -453,10 +453,22 @@ internal sealed class RabbitMqTelemetryReadingConsumer
                 "The telemetry well identifier is empty.");
         }
 
+        if (string.IsNullOrWhiteSpace(reading.WellName))
+        {
+            throw new JsonException(
+                "The telemetry well name is empty.");
+        }
+
         if (string.IsNullOrWhiteSpace(reading.WellboreId))
         {
             throw new JsonException(
                 "The telemetry wellbore identifier is empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reading.WellboreName))
+        {
+            throw new JsonException(
+                "The telemetry wellbore name is empty.");
         }
 
         if (!double.IsFinite(reading.MeasuredDepthMetres) ||
@@ -480,6 +492,14 @@ internal sealed class RabbitMqTelemetryReadingConsumer
             throw new JsonException(
                 "The telemetry drilling operation and depth-change rate " +
                 "are inconsistent.");
+        }
+
+        if (!double.IsFinite(reading.GammaRayApi) ||
+            reading.GammaRayApi < 0)
+        {
+            throw new JsonException(
+                "The telemetry gamma ray must be finite and not " +
+                "negative.");
         }
 
         return reading;
