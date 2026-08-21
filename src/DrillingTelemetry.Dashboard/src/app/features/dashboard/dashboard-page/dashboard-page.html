@@ -63,7 +63,7 @@
       </div>
       <div>
         <dt>Acquisition</dt>
-        <dd>Real-time</dd>
+        <dd>{{ acquisitionModeLabel() }}</dd>
       </div>
     </dl>
   </section>
@@ -119,9 +119,9 @@
 
     <article class="metric-card metric-card--throughput">
       <div class="metric-card__header">
-        <span>Data throughput</span>
+        <span>Pipeline throughput</span>
         <span class="trend trend--live">
-          {{ telemetryMetrics() ? 'Live' : 'Waiting' }}
+          {{ telemetryMetrics() ? 'Pipeline live' : 'Waiting' }}
         </span>
       </div>
       <div class="metric-value">
@@ -135,7 +135,9 @@
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--throughput" aria-hidden="true"></span>
         @if (telemetryMetrics(); as metrics) {
-          <span>{{ metrics.readingsProcessedTotal | number: '1.0-0' }} accepted since startup</span>
+          <span>
+            {{ metrics.readingsProcessedTotal | number: '1.0-0' }} accepted across all devices
+          </span>
         } @else {
           <span>Waiting for Processor metrics</span>
         }
@@ -146,7 +148,7 @@
       <div class="metric-card__header">
         <span>End-to-end latency</span>
         <span class="trend trend--live">
-          {{ telemetryMetrics() ? 'Live' : 'Waiting' }}
+          {{ telemetryMetrics() ? 'Pipeline live' : 'Waiting' }}
         </span>
       </div>
       <div class="metric-value">
@@ -164,7 +166,9 @@
       <div class="metric-card__footer">
         <span class="metric-spark metric-spark--latency" aria-hidden="true"></span>
         @if (telemetryMetrics(); as metrics) {
-          <span>Sampled {{ metrics.sampledAtUtc | date: 'HH:mm:ss' : 'UTC' }} UTC</span>
+          <span>
+            All devices · sampled {{ metrics.sampledAtUtc | date: 'HH:mm:ss' : 'UTC' }} UTC
+          </span>
         } @else {
           <span>Waiting for Processor metrics</span>
         }

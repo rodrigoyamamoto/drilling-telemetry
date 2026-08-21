@@ -75,4 +75,11 @@ public sealed class TelemetryReading
     /// Gets or sets the UTC timestamp of the reading.
     /// </summary>
     public DateTimeOffset TimestampUtc { get; set; }
+
+    /// <summary>
+    /// Gets or sets how the reading was acquired. The default
+    /// value is <see cref="TelemetryAcquisitionMode.RealTime"/> so that
+    /// payloads created before the field existed remain compatible.
+    /// </summary>
+    public TelemetryAcquisitionMode AcquisitionMode { get; set; }
 }

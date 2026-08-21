@@ -1,5 +1,11 @@
 import type { DrillingOperation } from './simulation-settings';
 
+/** Describes how a telemetry reading was acquired. */
+export enum TelemetryAcquisitionMode {
+  RealTime = 'RealTime',
+  HistoricalImport = 'HistoricalImport',
+}
+
 /** Persisted telemetry reading returned by the Processor API. */
 export interface TelemetryReading {
   /** Identifier of the telemetry device. */
@@ -43,4 +49,7 @@ export interface TelemetryReading {
 
   /** UTC acquisition timestamp in ISO 8601 format. */
   readonly timestampUtc: string;
+
+  /** Describes how the reading was acquired. */
+  readonly acquisitionMode: TelemetryAcquisitionMode;
 }

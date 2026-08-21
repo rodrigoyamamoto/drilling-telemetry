@@ -94,6 +94,7 @@ internal sealed class TelemetrySimulation
             reading.DrillingOperation = settings.DrillingOperation;
             reading.DepthChangeRateMetresPerHour =
                 settings.DepthChangeRateMetresPerHour;
+            reading.AcquisitionMode = TelemetryAcquisitionMode.RealTime;
 
             await _readingPublisher.PublishAsync(reading, cancellationToken);
         }

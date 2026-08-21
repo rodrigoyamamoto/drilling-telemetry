@@ -30,9 +30,10 @@ internal sealed class IdempotentTelemetryReadingStore
             temperature_celsius,
             gamma_ray_api,
             timestamp_utc,
+            acquisition_mode,
             payload
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         ON CONFLICT
         (
             device_id,
@@ -200,6 +201,13 @@ internal sealed class IdempotentTelemetryReadingStore
             {
                 NpgsqlDbType = NpgsqlDbType.TimestampTz,
                 Value = reading.TimestampUtc.UtcDateTime
+            });
+
+        command.Parameters.Add(
+            new NpgsqlParameter
+            {
+                NpgsqlDbType = NpgsqlDbType.Text,
+                Value = reading.AcquisitionMode.ToString()
             });
 
         command.Parameters.Add(

@@ -59,10 +59,45 @@ public sealed class TelemetryReadingMapperTests
             Assert.Equal("Archer A-07", reading.WellName);
             Assert.Equal("ARCHER-A-07-MAIN", reading.WellboreId);
             Assert.Equal("A-07 Main", reading.WellboreName);
+            Assert.Equal(
+                TelemetryAcquisitionMode.HistoricalImport,
+                reading.AcquisitionMode);
         }
 
         Assert.Equal(1, readings[0].SequenceNumber);
         Assert.Equal(2, readings[1].SequenceNumber);
+    }
+
+    /// <summary>
+    /// Verifies that every reading produced by the WITSML mapper carries
+    /// the historical-import acquisition mode, regardless of the data row.
+    /// </summary>
+    [Fact]
+    public void Map_ProducesHistoricalImportAcquisitionMode()
+    {
+        // Arrange
+        WitsmlLog log = ParseLog(
+            "DEPT,DTIM,GR,SPP,TEMP",
+            "m,datetime,gAPI,psi,degC",
+            [
+                "1000.0,2024-06-15T08:00:00Z,72.5,8200,105.0",
+                "1000.5,2024-06-15T08:01:00Z,74.1,8210,105.4"
+            ]);
+
+        var mapper = new TelemetryReadingMapper();
+
+        // Act
+        IReadOnlyList<TelemetryReading> readings = mapper.Map(
+            log,
+            DeviceId,
+            AcquisitionSessionId);
+
+        // Assert
+        Assert.All(
+            readings,
+            reading => Assert.Equal(
+                TelemetryAcquisitionMode.HistoricalImport,
+                reading.AcquisitionMode));
     }
 
     /// <summary>

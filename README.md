@@ -82,6 +82,18 @@ Start the applications in this order, using separate terminals from the reposito
    docker compose up -d rabbitmq postgres
    ```
 
+   A new PostgreSQL volume is created from `database/init.sql`. If the volume
+   already existed before acquisition modes were added, apply the incremental
+   migration once:
+
+   ```bash
+   docker compose exec -T postgres \
+     psql -U drilling_telemetry -d drilling_telemetry \
+     < database/006_add_acquisition_mode.sql
+   ```
+
+   Do not run the same migration again after it succeeds.
+
 2. Processor:
 
    ```bash
@@ -179,7 +191,8 @@ The history endpoint returns readings for the device's latest acquisition sessio
     "pressurePsi": 8250,
     "temperatureCelsius": 117.5,
     "gammaRayApi": 67.2,
-    "timestampUtc": "<runtime-timestamp>"
+    "timestampUtc": "<runtime-timestamp>",
+    "acquisitionMode": "RealTime"
   }
 ]
 ```
@@ -225,6 +238,24 @@ dotnet run \
   --device-id WITSML-DEMO-001
 ```
 
+Each importer execution creates a new acquisition session. Running the command
+again with the same `--device-id` therefore represents a separate historical
+acquisition run; it is not an idempotent retry of the first import.
+
+Both runs can be persisted under the same device identifier because telemetry
+identity includes the acquisition session as well as the device and sequence
+number. Repeating the example can consequently:
+
+- add another set of readings for `WITSML-DEMO-001`;
+- produce a concurrent-acquisition-session event while the Processor observes
+  both runs within its active-session window;
+- change which acquisition run is presented as the latest run in the dashboard;
+- affect the Processor-wide throughput and latency metrics during the import.
+
+For an isolated demonstration, use a new device identifier for each import,
+for example `WITSML-DEMO-002`. Reuse the same identifier only when intentionally
+demonstrating multiple historical acquisition runs for one device.
+
 The importer supports a documented subset, not the full WITSML standard:
 
 - WITSML version 1.4.1.1;
@@ -243,6 +274,32 @@ Supported units:
 | `DTIM` | ISO 8601 with offset or `Z` | Normalised to UTC |
 
 The importer does not implement SOAP, ETP, WebSocket or a WITSML server. It locates columns by the `mnemonicList` order (never assumes `logCurveInfo` order matches), rejects rows where a required curve is empty or uses its declared `nullValue`, and fails explicitly for unsupported units. A sample file is provided at `samples/witsml/real-time-drilling-log.xml`.
+
+The official Energistics 1.4.1.1 example at `src/DrillingTelemetry.WitsmlImporter/Witsml/Examples/log_no_xsl.xml` is used to validate structural parsing only. It does not contain the `DTIM`, `GR`, `SPP` and `TEMP` curves required by the laboratory mapping, so it cannot be converted into telemetry readings.
+
+The official example and schema are retained as reference artefacts from the
+[Energistics WITSML developer resources](https://energistics.org/witsml-developers-users)
+and the [WITSML data schema package](https://energistics.org/sites/default/files/witsml_data_schema_overview.html).
+The executable fixture under `samples/witsml/` was created specifically for
+this repository and is not an Energistics-supplied data file.
+
+### Acquisition mode
+
+Every telemetry reading carries an explicit `AcquisitionMode` field that identifies how it was acquired:
+
+- `RealTime` — produced by the DeviceSimulator during live operation;
+- `HistoricalImport` — produced by the WITSML importer from a historical log file.
+
+The field travels through RabbitMQ, PostgreSQL, the Processor API and SignalR without being inferred from timestamps, device identifiers or file names. The dashboard labels each reading accordingly: "Real-time" and "Live reading" for simulator data, "Historical import" and "Imported reading" for WITSML data. Messages produced before the field existed default to `RealTime`.
+
+Pipeline throughput and end-to-end latency are Processor-wide metrics across all devices; they are not filtered by the device selected in the dashboard. The end-to-end value measures the duration from the reading's acquisition timestamp to processing completion, so importing historical readings can temporarily produce a large value.
+
+### Troubleshooting
+
+- **A newly imported device is missing:** keep the Processor and dashboard running while importing. The importer only publishes to RabbitMQ; the device becomes available after the Processor accepts and persists its first reading.
+- **The importer reports readings but PostgreSQL returns no rows:** check `drilling.telemetry.readings` in RabbitMQ and confirm that an up-to-date Processor is consuming it. Also inspect the dead-letter queue for schema or validation failures.
+- **Existing data is labelled `RealTime`:** migration `006_add_acquisition_mode.sql` intentionally assigns `RealTime` to records created before acquisition modes existed. Re-import the WITSML sample with a new device identifier to validate `HistoricalImport`.
+- **The database reports a missing `acquisition_mode` column:** apply migration `006_add_acquisition_mode.sql` once, then restart the Processor.
 
 ## Services and endpoints
 
@@ -314,7 +371,7 @@ dotnet test DrillingTelemetry.sln \
   --no-restore
 ```
 
-The solution contains `DrillingTelemetry.DeviceSimulator.Tests` and `DrillingTelemetry.Processor.Tests`. No coverage percentage is published.
+The solution contains `DrillingTelemetry.DeviceSimulator.Tests`, `DrillingTelemetry.Processor.Tests` and `DrillingTelemetry.WitsmlImporter.Tests`. The current suite contains 43 tests. No coverage percentage is published.
 
 ### Load and recovery tests
 
@@ -381,14 +438,18 @@ samples/
 
 database/
 ├── init.sql
-└── migrations
+├── 002_add_drilling_context.sql
+├── 003_add_drilling_operation.sql
+├── 004_add_gamma_ray.sql
+├── 005_add_drilling_context_names.sql
+└── 006_add_acquisition_mode.sql
 ```
 
 - `Contracts` contains shared message and domain contracts.
 - `Control.Api` publishes simulation-setting commands.
-- `DeviceSimulator` produces telemetry readings.
+- `DeviceSimulator` produces real-time telemetry readings (`AcquisitionMode = RealTime`).
 - `Processor` handles validation, persistence, ordering, idempotency, events and SignalR.
-- `WitsmlImporter` converts a WITSML 1.4.1.1 log file into telemetry readings and publishes them to RabbitMQ.
+- `WitsmlImporter` converts a WITSML 1.4.1.1 log file into historical telemetry readings (`AcquisitionMode = HistoricalImport`) and publishes them to RabbitMQ.
 - `Dashboard` presents history and live data.
 - `tests` contains .NET tests, the k6 read test and recovery tooling.
 - `samples` contains the example WITSML log file.

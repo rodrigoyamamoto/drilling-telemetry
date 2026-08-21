@@ -168,7 +168,8 @@ internal sealed class TelemetryReadingMapper
                 PressurePsi = pressurePsi,
                 TemperatureCelsius = temperatureCelsius,
                 GammaRayApi = gammaRayApi,
-                TimestampUtc = timestampUtc
+                TimestampUtc = timestampUtc,
+                AcquisitionMode = TelemetryAcquisitionMode.HistoricalImport
             });
 
             previousTimestamp = timestampUtc;

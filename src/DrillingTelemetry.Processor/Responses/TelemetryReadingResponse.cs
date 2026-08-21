@@ -39,6 +39,9 @@ namespace DrillingTelemetry.Processor.Responses;
 /// Natural gamma ray measurement, in gAPI.
 /// </param>
 /// <param name="TimestampUtc">UTC acquisition timestamp.</param>
+/// <param name="AcquisitionMode">
+/// Producer that originated the reading.
+/// </param>
 public sealed record TelemetryReadingResponse(
     string DeviceId,
     Guid AcquisitionSessionId,
@@ -53,4 +56,5 @@ public sealed record TelemetryReadingResponse(
     double PressurePsi,
     double TemperatureCelsius,
     double GammaRayApi,
-    DateTimeOffset TimestampUtc);
+    DateTimeOffset TimestampUtc,
+    TelemetryAcquisitionMode AcquisitionMode);

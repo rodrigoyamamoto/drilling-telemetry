@@ -136,6 +136,7 @@ internal static class TelemetryReadingsEndpoints
             reading.PressurePsi,
             reading.TemperatureCelsius,
             reading.GammaRayApi,
-            reading.TimestampUtc);
+            reading.TimestampUtc,
+            reading.AcquisitionMode);
     }
 }

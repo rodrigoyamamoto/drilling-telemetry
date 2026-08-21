@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
     temperature_celsius  double precision NOT NULL,
     gamma_ray_api        double precision NOT NULL,
     timestamp_utc        timestamp with time zone NOT NULL,
+    acquisition_mode     text             NOT NULL,
     payload              jsonb            NOT NULL,
     received_at_utc      timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -67,6 +68,16 @@ CREATE TABLE IF NOT EXISTS telemetry_readings
         (
             gamma_ray_api >= 0
             AND gamma_ray_api < 'Infinity'::double precision
+        ),
+
+    CONSTRAINT ck_telemetry_readings_acquisition_mode
+        CHECK
+        (
+            acquisition_mode IN
+            (
+                'RealTime',
+                'HistoricalImport'
+            )
         )
 );
 

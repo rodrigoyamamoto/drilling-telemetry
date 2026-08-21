@@ -92,12 +92,68 @@ public sealed class TelemetrySimulationTests
                 Assert.NotEqual(
                     Guid.Empty,
                     reading.AcquisitionSessionId);
+                Assert.Equal(
+                    TelemetryAcquisitionMode.RealTime,
+                    reading.AcquisitionMode);
             });
 
         Assert.Single(
             readingPublisher.PublishedReadings
                 .Select(reading => reading.AcquisitionSessionId)
                 .Distinct());
+    }
+
+    /// <summary>
+    /// Verifies that every reading produced by the simulator carries the
+    /// real-time acquisition mode.
+    /// </summary>
+    [Fact]
+    public async Task PublishCycleAsync_ProducesRealTimeAcquisitionMode()
+    {
+        // Arrange
+        const double pressurePsi = 8_250;
+        const double temperatureCelsius = 117.5;
+        const double gammaRayApi = 65;
+
+        string[] deviceIds = ["DRILL-001"];
+
+        var timeProvider = new FakeTimeProvider(
+            new DateTimeOffset(2026, 8, 13, 15, 0, 0, TimeSpan.Zero));
+
+        var readingGenerator = new FixedTelemetryReadingGenerator(
+            timeProvider,
+            pressurePsi,
+            temperatureCelsius,
+            gammaRayApi);
+
+        var readingPublisher = new RecordingTelemetryReadingPublisher();
+
+        var settings = new SimulationSettings(
+            revision: 1,
+            deviceIds,
+            publishingInterval: TimeSpan.FromSeconds(1),
+            DrillingOperation.Stationary,
+            depthChangeRateMetresPerHour: 0);
+
+        var settingsState = new SimulationSettingsState(settings);
+
+        var simulation = new TelemetrySimulation(
+            readingGenerator,
+            readingPublisher,
+            timeProvider,
+            settingsState,
+            CreateDrillingContext());
+
+        // Act
+        await simulation.PublishCycleAsync(
+            settings,
+            CancellationToken.None);
+
+        // Assert
+        Assert.Single(readingPublisher.PublishedReadings);
+        Assert.Equal(
+            TelemetryAcquisitionMode.RealTime,
+            readingPublisher.PublishedReadings[0].AcquisitionMode);
     }
 
     /// <summary>

@@ -210,6 +210,46 @@ public sealed class TelemetryReadingProcessorTests
     }
 
     /// <summary>
+    /// Verifies that a JSON payload without the acquisition mode field
+    /// deserialises to the default real-time mode, preserving backward
+    /// compatibility with messages produced before the field existed.
+    /// </summary>
+    [Fact]
+    public void Deserialise_PayloadWithoutAcquisitionMode_DefaultsToRealTime()
+    {
+        // Arrange — a payload that predates the AcquisitionMode field.
+        const string legacyPayload =
+            """
+            {
+              "DeviceId": "DRILL-001",
+              "AcquisitionSessionId": "3ef44c4f-7944-4c8d-8358-6faf73419d21",
+              "SequenceNumber": 1,
+              "WellId": "W",
+              "WellName": "Well",
+              "WellboreId": "WB",
+              "WellboreName": "Wellbore",
+              "MeasuredDepthMetres": 1000.0,
+              "DrillingOperation": "Stationary",
+              "DepthChangeRateMetresPerHour": 0,
+              "PressurePsi": 8250,
+              "TemperatureCelsius": 117.5,
+              "GammaRayApi": 65,
+              "TimestampUtc": "2026-08-13T15:00:00Z"
+            }
+            """;
+
+        // Act
+        TelemetryReading? reading = JsonSerializer.Deserialize<TelemetryReading>(
+            legacyPayload);
+
+        // Assert
+        Assert.NotNull(reading);
+        Assert.Equal(
+            TelemetryAcquisitionMode.RealTime,
+            reading!.AcquisitionMode);
+    }
+
+    /// <summary>
     /// Creates the processor with real sequence and metrics services and a
     /// recording real-time boundary.
     /// </summary>

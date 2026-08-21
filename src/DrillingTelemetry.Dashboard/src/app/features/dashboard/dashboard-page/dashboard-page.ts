@@ -18,7 +18,7 @@ import { OperationalEventsService } from '../data-access/operational-events.serv
 import { DrillingOperation } from '../data-access/simulation-settings';
 import { TelemetryHistoryService } from '../data-access/telemetry-history.service';
 import type { TelemetryMetrics } from '../data-access/telemetry-metrics';
-import type { TelemetryReading } from '../data-access/telemetry-reading';
+import { TelemetryAcquisitionMode, type TelemetryReading } from '../data-access/telemetry-reading';
 import { TelemetryLiveService } from '../data-access/telemetry-live.service';
 import { DeviceList } from '../device-list/device-list';
 import { GammaRayChart } from '../gamma-ray-chart/gamma-ray-chart';
@@ -175,11 +175,27 @@ export class DashboardPage {
     }
   });
 
-  /** Short label describing the historical reading state. */
+  /** Human-readable label for the acquisition mode of the latest reading. */
+  protected readonly acquisitionModeLabel = computed(() => {
+    switch (this.latestReading()?.acquisitionMode) {
+      case TelemetryAcquisitionMode.RealTime:
+        return 'Real-time';
+      case TelemetryAcquisitionMode.HistoricalImport:
+        return 'Historical import';
+      default:
+        return 'Real-time';
+    }
+  });
+
+  /** Short label describing the origin of the latest reading. */
   protected readonly readingStatusLabel = computed(() => {
     const state = this.readingState();
 
     if (this.displayedReadings().length > 0) {
+      const latest = this.latestReading();
+      if (latest?.acquisitionMode === TelemetryAcquisitionMode.HistoricalImport) {
+        return 'Imported reading';
+      }
       return this.liveConnectionStatus() === 'connected' ? 'Live reading' : 'Latest reading';
     }
 

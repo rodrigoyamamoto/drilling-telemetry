@@ -43,7 +43,8 @@ internal sealed class TelemetryHistoryReader
                 pressure_psi,
                 temperature_celsius,
                 gamma_ray_api,
-                timestamp_utc
+                timestamp_utc,
+                acquisition_mode
             FROM telemetry_readings
             WHERE device_id = @DeviceId
                 AND acquisition_session_id =
@@ -65,7 +66,8 @@ internal sealed class TelemetryHistoryReader
             pressure_psi AS "PressurePsi",
             temperature_celsius AS "TemperatureCelsius",
             gamma_ray_api AS "GammaRayApi",
-            timestamp_utc AS "TimestampUtc"
+            timestamp_utc AS "TimestampUtc",
+            acquisition_mode AS "AcquisitionMode"
         FROM recent_readings
         ORDER BY timestamp_utc, sequence_number;
         """;
