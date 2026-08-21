@@ -1,11 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import type { OperationalEvent } from '../data-access/operational-event';
 
@@ -17,7 +11,7 @@ const maximumVisibleEvents = 4;
   imports: [DatePipe],
   templateUrl: './operational-events-panel.html',
   styleUrl: './operational-events-panel.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OperationalEventsPanel {
   /** Operational events in reverse chronological order. */
@@ -33,9 +27,7 @@ export class OperationalEventsPanel {
   readonly retryRequested = output<void>();
 
   /** Events visible in the dashboard summary. */
-  protected readonly visibleEvents = computed(() =>
-    this.events().slice(0, maximumVisibleEvents)
-  );
+  protected readonly visibleEvents = computed(() => this.events().slice(0, maximumVisibleEvents));
 
   /** Gets the concise title used for an operational event. */
   protected getTitle(operationalEvent: OperationalEvent): string {
@@ -50,16 +42,22 @@ export class OperationalEventsPanel {
         return 'Out-of-order reading received';
       case 'InvalidMessage':
         return 'Invalid message rejected';
+      case 'ConcurrentAcquisitionSessions':
+        return 'Concurrent acquisition sessions detected';
     }
   }
 
   /** Gets the device context and description for an operational event. */
   protected getDescription(operationalEvent: OperationalEvent): string {
+    if (operationalEvent.eventType === 'ConcurrentAcquisitionSessions') {
+      return operationalEvent.message;
+    }
+
     const identityParts = [
       operationalEvent.deviceId,
       operationalEvent.sequenceNumber === null
         ? null
-        : `sequence ${operationalEvent.sequenceNumber}`
+        : `sequence ${operationalEvent.sequenceNumber}`,
     ].filter((part): part is string => part !== null);
 
     return identityParts.length === 0

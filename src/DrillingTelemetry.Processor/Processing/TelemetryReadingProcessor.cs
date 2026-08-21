@@ -20,6 +20,8 @@ internal sealed class TelemetryReadingProcessor
     private readonly ITelemetryReadingStore _telemetryReadingStore;
     private readonly IOperationalEventService _operationalEventService;
     private readonly ITelemetryReadingBroadcaster _telemetryReadingBroadcaster;
+    private readonly ConcurrentAcquisitionSessionDetector
+        _concurrentSessionDetector;
     private readonly ILogger<TelemetryReadingProcessor> _logger;
 
     /// <summary>
@@ -41,6 +43,9 @@ internal sealed class TelemetryReadingProcessor
     /// <param name="telemetryReadingBroadcaster">
     /// Broadcasts accepted readings to connected clients.
     /// </param>
+    /// <param name="concurrentSessionDetector">
+    /// Detects concurrent acquisition sessions for the same device.
+    /// </param>
     /// <param name="logger">
     /// Records processing decisions and sequence anomalies.
     /// </param>
@@ -51,6 +56,7 @@ internal sealed class TelemetryReadingProcessor
         ITelemetryReadingStore telemetryReadingStore,
         IOperationalEventService operationalEventService,
         ITelemetryReadingBroadcaster telemetryReadingBroadcaster,
+        ConcurrentAcquisitionSessionDetector concurrentSessionDetector,
         ILogger<TelemetryReadingProcessor> logger)
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
@@ -59,6 +65,7 @@ internal sealed class TelemetryReadingProcessor
         ArgumentNullException.ThrowIfNull(telemetryReadingStore);
         ArgumentNullException.ThrowIfNull(operationalEventService);
         ArgumentNullException.ThrowIfNull(telemetryReadingBroadcaster);
+        ArgumentNullException.ThrowIfNull(concurrentSessionDetector);
         ArgumentNullException.ThrowIfNull(logger);
 
         _timeProvider = timeProvider;
@@ -67,6 +74,7 @@ internal sealed class TelemetryReadingProcessor
         _telemetryReadingStore = telemetryReadingStore;
         _operationalEventService = operationalEventService;
         _telemetryReadingBroadcaster = telemetryReadingBroadcaster;
+        _concurrentSessionDetector = concurrentSessionDetector;
         _logger = logger;
     }
 
@@ -112,6 +120,19 @@ internal sealed class TelemetryReadingProcessor
                 cancellationToken);
 
             return TelemetryProcessingResult.Conflict;
+        }
+
+        ConcurrentAcquisitionSessionConflict? sessionConflict =
+            _concurrentSessionDetector.Observe(
+                reading.DeviceId,
+                reading.AcquisitionSessionId);
+
+        if (sessionConflict is not null)
+        {
+            await RecordConcurrentSessionsAsync(
+                reading,
+                sessionConflict,
+                cancellationToken);
         }
 
         TelemetrySequenceObservation observation =
@@ -285,5 +306,61 @@ internal sealed class TelemetryReadingProcessor
         return _operationalEventService.RecordAsync(
             operationalEvent,
             cancellationToken);
+    }
+
+    /// <summary>
+    /// Records that a device is receiving telemetry from two active
+    /// acquisition sessions.
+    /// </summary>
+    /// <param name="reading">
+    /// Telemetry reading that triggered the detection.
+    /// </param>
+    /// <param name="sessionConflict">
+    /// Identifies the existing and newly observed acquisition sessions.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Signals that event recording should be cancelled.
+    /// </param>
+    private Task RecordConcurrentSessionsAsync(
+        TelemetryReading reading,
+        ConcurrentAcquisitionSessionConflict sessionConflict,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogWarning(
+            "Concurrent acquisition sessions detected for {DeviceId}: " +
+            "existing session {ExistingSessionId}, " +
+            "newly observed session {ObservedSessionId}",
+            reading.DeviceId,
+            sessionConflict.ExistingSessionId,
+            sessionConflict.ObservedSessionId);
+
+        string existingRun = FormatRunLabel(
+            sessionConflict.ExistingSessionId);
+        string observedRun = FormatRunLabel(
+            sessionConflict.ObservedSessionId);
+
+        var operationalEvent = new OperationalEvent(
+            Guid.NewGuid(),
+            OperationalEventType.ConcurrentAcquisitionSessions,
+            OperationalEventSeverity.Warning,
+            reading.DeviceId,
+            reading.AcquisitionSessionId,
+            SequenceNumber: null,
+            PreviousSequenceNumber: null,
+            GapSize: null,
+            $"{reading.DeviceId} is receiving telemetry from two " +
+            $"active acquisition runs. Existing run {existingRun}, " +
+            $"newly observed run {observedRun}.",
+            _timeProvider.GetUtcNow());
+
+        return _operationalEventService.RecordAsync(
+            operationalEvent,
+            cancellationToken);
+    }
+
+    private static string FormatRunLabel(Guid sessionId)
+    {
+        return sessionId.ToString("N").Substring(0, 8)
+            .ToUpperInvariant();
     }
 }

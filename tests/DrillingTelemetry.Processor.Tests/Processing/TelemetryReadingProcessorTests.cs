@@ -227,6 +227,9 @@ public sealed class TelemetryReadingProcessorTests
             new InMemoryTelemetryReadingStore(),
             new NoOpOperationalEventService(),
             broadcaster,
+            new ConcurrentAcquisitionSessionDetector(
+                TimeProvider.System,
+                TimeSpan.FromSeconds(30)),
             NullLogger<TelemetryReadingProcessor>.Instance);
     }
 

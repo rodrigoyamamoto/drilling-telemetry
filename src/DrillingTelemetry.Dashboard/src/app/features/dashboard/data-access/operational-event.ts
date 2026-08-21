@@ -4,7 +4,8 @@ export type OperationalEventType =
   | 'ConflictingReading'
   | 'SequenceGap'
   | 'OutOfOrderReading'
-  | 'InvalidMessage';
+  | 'InvalidMessage'
+  | 'ConcurrentAcquisitionSessions';
 
 /** Severity assigned by the telemetry processor. */
 export type OperationalEventSeverity = 'Warning' | 'Critical';

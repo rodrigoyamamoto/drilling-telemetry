@@ -5,6 +5,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -41,7 +42,9 @@ const initialReadingState: ReadingState = {
 };
 
 const maximumDisplayedReadings = 100;
+const maximumBufferedLiveReadings = 200;
 const maximumOperationalEvents = 20;
+const acquisitionSessionInactivityThresholdMilliseconds = 30_000;
 
 /** Presents the operational overview for the selected drilling context. */
 @Component({
@@ -67,6 +70,13 @@ export class DashboardPage {
   private readonly telemetryLiveService = inject(TelemetryLiveService);
 
   private readonly liveReadings = signal<readonly TelemetryReading[]>([]);
+
+  /**
+   * Acquisition session currently displayed. Retained while it continues
+   * receiving readings to prevent alternating sessions from reconstructing
+   * the charts on every update.
+   */
+  private readonly pinnedAcquisitionSessionId = signal<string | null>(null);
 
   /** Latest processing metrics received from the Processor. */
   protected readonly telemetryMetrics = signal<TelemetryMetrics | null>(null);
@@ -107,18 +117,30 @@ export class DashboardPage {
   /** SignalR connection status exposed by the live telemetry service. */
   protected readonly liveConnectionStatus = this.telemetryLiveService.connectionStatus;
 
-  /** Historical baseline merged with accepted live readings, scoped to the active acquisition session. */
-  protected readonly displayedReadings = computed(() =>
-    this.mergeReadings(this.readingState().readings, this.liveReadings()),
+  /** All merged readings for the selected device, before session filtering. */
+  private readonly allMergedReadings = computed(() =>
+    this.mergeAndDeduplicate(this.readingState().readings, this.liveReadings()),
   );
+
+  /** Historical baseline merged with accepted live readings, scoped to the pinned acquisition session. */
+  protected readonly displayedReadings = computed(() => {
+    const sessionId = this.pinnedAcquisitionSessionId();
+
+    if (!sessionId) {
+      return [];
+    }
+
+    return this.allMergedReadings()
+      .filter((reading) => reading.acquisitionSessionId === sessionId)
+      .sort((left, right) => this.compareReadings(left, right))
+      .slice(-maximumDisplayedReadings);
+  });
 
   /** Most recent reading available to the dashboard. */
   protected readonly latestReading = computed(() => this.displayedReadings().at(-1) ?? null);
 
   /** Identifier of the acquisition run currently displayed. */
-  protected readonly activeAcquisitionRunId = computed(
-    () => this.latestReading()?.acquisitionSessionId ?? null,
-  );
+  protected readonly activeAcquisitionRunId = computed(() => this.pinnedAcquisitionSessionId());
 
   /** Short, human-readable label for the active acquisition run. */
   protected readonly activeAcquisitionRunLabel = computed(() => {
@@ -208,6 +230,10 @@ export class DashboardPage {
       .subscribe(() => this.refreshHistoryAfterConnection());
 
     this.telemetryLiveService.start();
+
+    effect(() => {
+      this.updatePinnedSession(this.allMergedReadings());
+    });
   }
 
   /** Loads the devices that have persisted telemetry readings. */
@@ -272,6 +298,7 @@ export class DashboardPage {
     }
 
     this.liveReadings.set([]);
+    this.pinnedAcquisitionSessionId.set(null);
     this.selectedDeviceId.set(deviceId);
   }
 
@@ -283,6 +310,7 @@ export class DashboardPage {
     }
 
     this.liveReadings.set([]);
+    this.pinnedAcquisitionSessionId.set(null);
     this.selectedDeviceId.set(deviceIds[0] ?? null);
   }
 
@@ -328,7 +356,11 @@ export class DashboardPage {
       return;
     }
 
-    this.liveReadings.update((readings) => this.mergeReadings(readings, [reading]));
+    this.liveReadings.update((readings) =>
+      [...this.mergeAndDeduplicate(readings, [reading])]
+        .sort((left, right) => this.compareReadings(left, right))
+        .slice(-maximumBufferedLiveReadings),
+    );
   }
 
   private receiveOperationalEvent(operationalEvent: OperationalEvent): void {
@@ -345,7 +377,7 @@ export class DashboardPage {
     }
   }
 
-  private mergeReadings(
+  private mergeAndDeduplicate(
     baseline: readonly TelemetryReading[],
     incoming: readonly TelemetryReading[],
   ): readonly TelemetryReading[] {
@@ -355,32 +387,54 @@ export class DashboardPage {
       readingsByIdentity.set(this.createReadingIdentity(reading), reading);
     }
 
-    const deduplicatedReadings = [...readingsByIdentity.values()];
-
-    if (deduplicatedReadings.length === 0) {
-      return [];
-    }
-
-    const activeSessionId = this.findActiveSessionId(deduplicatedReadings);
-
-    return deduplicatedReadings
-      .filter((reading) => reading.acquisitionSessionId === activeSessionId)
-      .sort((left, right) => this.compareReadings(left, right))
-      .slice(-maximumDisplayedReadings);
+    return [...readingsByIdentity.values()];
   }
 
-  private findActiveSessionId(readings: readonly TelemetryReading[]): string {
-    let latestReading = readings[0];
+  /**
+   * Retains the pinned acquisition session while it continues receiving
+   * readings. A newer session takes over only after the pinned session has
+   * remained inactive for the bounded activity threshold.
+   */
+  private updatePinnedSession(readings: readonly TelemetryReading[]): void {
+    const pinned = this.pinnedAcquisitionSessionId();
+    if (readings.length === 0) {
+      this.pinnedAcquisitionSessionId.set(null);
+      return;
+    }
+
+    const latestReading = this.findLatestReading(readings);
+
+    if (!pinned || pinned === latestReading.acquisitionSessionId) {
+      this.pinnedAcquisitionSessionId.set(latestReading.acquisitionSessionId);
+      return;
+    }
+
+    const pinnedReadings = readings.filter((reading) => reading.acquisitionSessionId === pinned);
+
+    if (pinnedReadings.length === 0) {
+      this.pinnedAcquisitionSessionId.set(latestReading.acquisitionSessionId);
+      return;
+    }
+
+    const latestPinnedReading = this.findLatestReading(pinnedReadings);
+    const inactivityMilliseconds =
+      Date.parse(latestReading.timestampUtc) - Date.parse(latestPinnedReading.timestampUtc);
+
+    if (inactivityMilliseconds > acquisitionSessionInactivityThresholdMilliseconds) {
+      this.pinnedAcquisitionSessionId.set(latestReading.acquisitionSessionId);
+    }
+  }
+
+  private findLatestReading(readings: readonly TelemetryReading[]): TelemetryReading {
+    let latest = readings[0];
 
     for (const reading of readings.slice(1)) {
-      const comparison = this.compareReadings(reading, latestReading);
-
-      if (comparison >= 0) {
-        latestReading = reading;
+      if (this.compareReadings(reading, latest) >= 0) {
+        latest = reading;
       }
     }
 
-    return latestReading.acquisitionSessionId;
+    return latest;
   }
 
   private createReadingIdentity(reading: TelemetryReading): string {

@@ -51,7 +51,13 @@ internal enum OperationalEventType
     OutOfOrderReading,
 
     /// <summary>An invalid message was rejected by the consumer.</summary>
-    InvalidMessage
+    InvalidMessage,
+
+    /// <summary>
+    /// The same device received telemetry from different acquisition
+    /// sessions within the configured activity window.
+    /// </summary>
+    ConcurrentAcquisitionSessions
 }
 
 /// <summary>

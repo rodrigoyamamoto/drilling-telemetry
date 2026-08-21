@@ -85,6 +85,16 @@ internal static class ProcessorServiceCollectionExtensions
             .ValidateOnStart();
 
         services
+            .AddOptions<TelemetryProcessingOptions>()
+            .BindConfiguration(TelemetryProcessingOptions.SectionName)
+            .Validate(
+                options =>
+                    options.ConcurrentAcquisitionSessionActivityWindowSeconds
+                    > 0,
+                "Concurrent acquisition session activity window must be greater than zero.")
+            .ValidateOnStart();
+
+        services
             .AddOptions<PostgresOptions>()
             .BindConfiguration(PostgresOptions.SectionName)
             .Validate(
@@ -115,6 +125,21 @@ internal static class ProcessorServiceCollectionExtensions
         services.AddSingleton<TelemetryProcessingMetrics>();
 
         services.AddSingleton<TelemetrySequenceTracker>();
+
+        services.AddSingleton(serviceProvider =>
+        {
+            TelemetryProcessingOptions processingOptions = serviceProvider
+                .GetRequiredService<IOptions<TelemetryProcessingOptions>>()
+                .Value;
+            TimeProvider timeProvider = serviceProvider
+                .GetRequiredService<TimeProvider>();
+
+            return new ConcurrentAcquisitionSessionDetector(
+                timeProvider,
+                TimeSpan.FromSeconds(
+                    processingOptions
+                        .ConcurrentAcquisitionSessionActivityWindowSeconds));
+        });
 
         services.AddSingleton(serviceProvider =>
         {
